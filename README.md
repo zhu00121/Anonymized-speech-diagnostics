@@ -29,5 +29,5 @@ Integrate speech anonymization techniques with speech-based diagnostics systems
 
 **Config**: contains the (hyper-)parameters used for different models. <br /> 
 **Local**: contains four sub-folders, corresponding to the four blocks of ASD. All scripts can be found in this folder.  <br /> 
-**Results**: results of experiments.
+**Results**: results of experiments. <br /> 
 **Graphs**: diagrams and so on.
