@@ -9,6 +9,7 @@ Integrate speech anonymization techniques with speech-based diagnostics systems
 
 *PLACEHOLDER FOR GRAPHS*
 
+![image](./Graphs/protected_system.jpg)
 
 ## Training and inference phase of ASD
 
