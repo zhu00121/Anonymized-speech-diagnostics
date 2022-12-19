@@ -23,8 +23,8 @@ def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, *
     assert feature_type in ['logmelspec','openSMILE','msr'], "Incorrect feature type"
 
     if feature_type == 'logmelspec':
-        ot = sp.calc_melspec(x=ad, fs=fs, n_mfcc=kwargs['n_mfcc'], \
-                            window_length=kwargs['win_len'], hop_length=kwargs['hop_len'], \
+        ot = sp.calc_melspec(x=ad, fs=fs, n_mels=kwargs['n_mels'], \
+                            win_length=kwargs['win_len'], hop_length=kwargs['hop_len'], \
                             n_fft=kwargs['n_fft'], require_log=True)
 
         ot_d = sp.calc_deltas(x=ot)
@@ -38,7 +38,7 @@ def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, *
                         low_freq=kwargs['low_freq'], min_cf=kwargs['min_cf'], max_cf=kwargs['max_cf'], \
                         require_ave=kwargs['require_ave'])
 
-    assert np.isnan(ot).any(), "NaN in extracted features!"
+    assert np.isfinite(ot).all(), "NaN in extracted features!"
 
     # Save result as a pkl file
     sp.save_as_pkl(save_path,ot)
@@ -46,36 +46,49 @@ def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, *
     return ot
 
 
-def FE_from_dataset(dataset:str, fs:int, feature_type:str, save_to:str, **kwargs):
+def FE_from_dataset(metadata_path:str, feature_dir:str, fs:int, feature_type:str, **kwargs):
 
     """
-    Extract features for the whole dataset. 
     *Ensure that 'clean_dataset.py' runs before feature extraction.
+    Extract features for the whole dataset:
+    1. Access the metadata file which contains path to every speech recording;
+    2. Extract features recursively from each recording;
+    3. Store the extracted features separately for each sample;
+    4. Update the metadata file with feature path.
     """
-    assert os.path.exists('%s_metadata.csv'%(dataset)), "Cannot find the required metadata file!"
+    assert os.path.exists(metadata_path), "Required metadata file is not in this location"
 
-    df_md = pd.read_csv('%s_metadata.csv'%(dataset)) # load metadata
-    all_audio_path = df_md['Audio_path'].tolist()
+    df_md = pd.read_csv(metadata_path) # load metadata
+    all_audio_path = df_md['audio_path'].tolist()
     all_feature_path = [] # to store feature path (./XXX.pkl)
 
+    print('Start feature extraction...')
     for idx, ad_path in tqdm(all_audio_path):
         # get sample id
         _, tail = os.path.split(ad_path)
         sample_id = tail.removesuffix('.wav')
         sample_id = sample_id.removesuffix('.flac')
-        save_path = os.path.join(save_to,'%s.pkl'%(sample_id)) # feature path
-        all_feature_path.append(save_path)
-        ot = FE_from_single_ad(ad_path, fs, feature_type, save_path, kwargs)
-
+        feature_path = os.path.join(feature_dir,'%s.pkl'%(sample_id)) # feature path
+        all_feature_path.append(feature_path)
+        ot = FE_from_single_ad(ad_path, fs, feature_type, feature_path, kwargs)
     print('------')
     print('Feature extraction completed.')
+
     # Save feature path
     df_md_new = df_md
     df_md_new['Feature_path'] = all_feature_path
-    df_md_new.to_csv('%s_metadata_final.csv'%(dataset))
+    metadata_path_new = os.path.join(os.path.dirname(metadata_path),'metadata_feature.csv')
+    df_md_new.to_csv(metadata_path_new)
 
     return df_md_new
 
 
+if __name__ == '__main__':
     
-    
+    # test logmelspec 
+    kwargs = {'require_zeropad':False,'n_mels':64, 'win_len':256, 'hop_len':64, 'n_fft':512}
+
+    ot = FE_from_single_ad('/mnt/d/projects/COVID-datasets/CSS/audio/dev_001.wav',\
+        fs=16000, feature_type='logmelspec', \
+        save_path='/mnt/d/projects/Anonymized-speech-diagnostics/Features/CSS/original/toy.pkl',
+        **kwargs)

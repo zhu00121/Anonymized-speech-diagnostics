@@ -8,6 +8,7 @@ from tqdm import tqdm
 import librosa
 from srmrpy import srmr
 import opensmile
+import matplotlib.pyplot as plt
 
 
 def read_audio(audio_path:str, fs:int):
@@ -17,8 +18,10 @@ def read_audio(audio_path:str, fs:int):
     """
     assert os.path.exists(audio_path), "Audio path does not exist!"
     ad,_ = librosa.load(audio_path,sr=fs) # sampling rate variable discarded
-    ad = (np.max(ad)-np.min(np.abs(ad)))/np.max(ad) # amplitude scaling
-    assert np.isnan(ad).any(), "NaN in audio array"
+    ad = ad/np.max(ad) # amplitude scaling
+    plt.plot(ad)
+    plt.show()
+    assert np.isfinite(ad).all(), "NaN in audio array"
 
     return ad
 
@@ -47,13 +50,13 @@ def calc_MFCC(x, fs, n_mfcc, window_length, hop_length, n_fft):
     return mfcc
 
 
-def calc_melspec(x, fs, n_mfcc, window_length, hop_length, n_fft, require_log=True):
+def calc_melspec(x, fs, n_mels, win_length, hop_length, n_fft, require_log=True):
 
     """
     Calculate (log) mel-spectrogram from a signal.
     """
-    mel_spec = librosa.feature.melspectrogram(y=x, sr=fs, n_mfcc=n_mfcc, \
-            window_length = window_length, hop_length = hop_length, \
+    mel_spec = librosa.feature.melspectrogram(y=x, sr=fs, n_mels=n_mels, \
+            win_length = win_length, hop_length = hop_length, \
             n_fft = n_fft)
 
     if require_log:
