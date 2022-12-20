@@ -111,6 +111,10 @@ def save_as_pkl(save_path:str,variable):
     """
     Save result as a pickle file.
     """
+
+    if os.path.exists(save_path):
+        print('WARNING: existing file with the same time is overwritten')
+    
     with open(save_path, "wb") as outfile:
         pkl.dump(variable, outfile, pkl.HIGHEST_PROTOCOL)
         
@@ -127,3 +131,9 @@ def load_pkl(save_path:str):
         saved_fea = pkl.load(infile)
 
     return saved_fea
+
+
+def remove_suffix(input_string, suffix):
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string
