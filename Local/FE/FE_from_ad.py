@@ -10,14 +10,14 @@ from srmrpy import srmr
 import sigproc as sp
 
 
-def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, **kwargs):
+def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, require_zeropad=False,**kwargs):
 
     """
     Extract features from a single audio file.
     """
     # Read audio file from specified path
     ad = sp.read_audio(audio_path=audio_path, fs=fs)
-    if kwargs['require_zeropad']:
+    if require_zeropad:
         ad = sp.zeropad(x=ad,fs=fs,length=kwargs['desired_len'])
 
     assert feature_type in ['logmelspec','openSMILE','msr'], "Incorrect feature type"
@@ -34,9 +34,10 @@ def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, *
         ot = sp.calc_openSMILE(audio_path=audio_path)
 
     elif feature_type == 'msr':
-        ot = sp.calc_mtr(x=ad, fs=fs, n_cochlear_filters=kwargs['n_cochlear_filters'], \
-                        low_freq=kwargs['low_freq'], min_cf=kwargs['min_cf'], max_cf=kwargs['max_cf'], \
-                        require_ave=kwargs['require_ave'])
+        ot = sp.calc_mtr(x=ad, fs=fs, \
+            n_cochlear_filters=kwargs['n_cochlear_filters'], low_freq=kwargs['low_freq'],\
+            min_cf=kwargs['min_cf'], max_cf=kwargs['max_cf'], \
+            require_ave=kwargs['require_ave'])
 
     assert np.isfinite(ot).all(), "NaN in extracted features!"
 
@@ -84,11 +85,26 @@ def FE_from_dataset(metadata_path:str, feature_dir:str, fs:int, feature_type:str
 
 
 if __name__ == '__main__':
-    
-    # test logmelspec 
-    kwargs = {'require_zeropad':False,'n_mels':64, 'win_len':256, 'hop_len':64, 'n_fft':512}
 
-    ot = FE_from_single_ad('/mnt/d/projects/COVID-datasets/CSS/audio/dev_001.wav',\
-        fs=16000, feature_type='logmelspec', \
-        save_path='/mnt/d/projects/Anonymized-speech-diagnostics/Features/CSS/original/toy.pkl',
-        **kwargs)
+    # # test logmelspec 
+    # kwargs = {'n_mels':64, 'win_len':256, 'hop_len':64, 'n_fft':512}
+
+    # ot = FE_from_single_ad('/mnt/d/projects/COVID-datasets/CSS/audio/dev_001.wav',\
+    #     fs=16000, feature_type='logmelspec', \
+    #     save_path='/mnt/d/projects/Anonymized-speech-diagnostics/Features/CSS/original/toy.pkl',
+    #     **kwargs)
+
+    # test openSMILE
+    # no kwargs needed. TBD: add GeMaps features or other ComParE versions.
+    # ot = FE_from_single_ad('/mnt/d/projects/COVID-datasets/CSS/audio/dev_001.wav',\
+    #     fs=16000, feature_type='openSMILE',\
+    #     save_path='/mnt/d/projects/Anonymized-speech-diagnostics/Features/CSS/original/toy_2.pkl'        
+    #     )
+    
+    # test MTR/MSR
+    # kwargs = {'n_cochlear_filters':23,'low_freq':0, 'min_cf':2,'max_cf':32,'require_ave':True}
+    # ot = FE_from_single_ad('/mnt/d/projects/COVID-datasets/CSS/audio/dev_001.wav',\
+    #     fs=16000, feature_type='msr',\
+    #     save_path='/mnt/d/projects/Anonymized-speech-diagnostics/Features/CSS/original/toy_2.pkl',\
+    #     **kwargs
+    #     )
