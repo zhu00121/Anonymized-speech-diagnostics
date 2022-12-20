@@ -7,6 +7,7 @@ Created on Thu Sep  8 20:54:45 2022
 """
 
 import numpy as np
+import random
 import sklearn.preprocessing
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV, RepeatedStratifiedKFold, PredefinedSplit
@@ -19,9 +20,10 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.subplots as sp
 import plotly.io as pio
+from Utils import util
 
 """
-Functions used to train shallow ML models.
+Functions used to train and evaluate models.
 """
 
 def train_model(X_train,y_train,
@@ -29,7 +31,10 @@ def train_model(X_train,y_train,
                 clf_kwargs,
                 random_state=26):
     
-    """ choose model """
+    """
+    Given training data and labels, conduct model (shallow ones) training 
+    with N-fold CV (or predefined split).
+    """
     model_choice = ['svm','rf','dt']
     assert model in model_choice, " available models: svm/rf/dt "
     
@@ -50,16 +55,80 @@ def train_model(X_train,y_train,
     
     elif clf_kwargs['pds'] == 'yes':
         cv = PredefinedSplit(clf_kwargs['split_index'])
-        
+    
+    # start training
+    print('Training models...')
     clf = GridSearchCV(m, param_grid=params,cv=cv,scoring='roc_auc')
     clf.fit(X_train,y_train)
+    print('Training finished. Best parameters are shown as follows:')
     print (clf.best_params_)
 
     return clf
 
 
-def get_confmat(label,prediction):
-    cf_matrix = confusion_matrix(label,prediction)
+def mean_confidence_interval(data):
+    """
+    Calculate mean and confidence intervals.
+    """
+    m = np.mean(data)
+    std = np.std(data)
+    h = 2*std
+    return m, m-h, m+h
+
+
+def model_predict(x_test,y_test,pt_clf):
+    
+    """
+    Make predictions using a pretrained classifier and obtain evaluation metrics.
+    """
+    preds = pt_clf.predict(x_test)
+    probs = pt_clf.predict_proba(x_test)
+    UAR = sklearn.metrics.recall_score(y_test, preds, average='macro')
+    ROC = sklearn.metrics.roc_auc_score(y_test, probs)
+    fpr, tpr, _ = sklearn.metrics.roc_curve(y_test, probs, pos_label=1)
+    report = {'UAR':UAR, 'ROC':ROC, 'TPR':tpr, 'TNR':1-fpr}
+    
+    return report
+
+def eva_model(x_test,y_test,pt_clf,num_bs=1000,save_path=None):
+    
+    """
+    Evaluate the model performance using N times Bootstrap on test data.
+    """
+    result = {'UAR':[], 'ROC':[], 'TPR':[], 'TNR':[],\
+        'UAR_AVE':0, 'ROC_AVE':0, 'TPR_AVE':0, 'TNR_AVE':0}
+        
+    for bs in range(num_bs):
+
+        idx = list(range(x_test.shape[0]))
+        bs_idx = random.choices(idx,k=x_test.shape[0])
+        x_test_bs = x_test[bs_idx,:]
+        x_test_bs = y_test[bs_idx]
+        result_bs = model_predict(x_test,y_test,pt_clf)
+        result['UAR'].append(result_bs['UAR'])
+        result['ROC'].append(result_bs['ROC'])
+        result['TPR'].append(result_bs['TPR'])
+        result['TNR'].append(result_bs['TNR'])
+    
+    result['UAR_AVE'] = mean_confidence_interval(result['UAR'])
+    result['ROC_AVE'] = mean_confidence_interval(result['ROC'])
+    result['TPR_AVE'] = mean_confidence_interval(result['TPR'])
+    result['TNR_AVE'] = mean_confidence_interval(result['TNR'])
+
+    # save results
+    if save_path is not None:
+        util.save_as_pkl(result,save_path)
+        print('Results are save to: '+save_path)
+
+    return result
+
+
+def get_confmat(label,preds):
+
+    """
+    Plot confusion matrix.
+    """
+    cf_matrix = confusion_matrix(label,preds)
 
     group_names = ['True neg','False pos','False neg','True pos']
     group_percentages1 = ["{0:.2%}".format(value) for value in
@@ -81,16 +150,6 @@ def get_confmat(label,prediction):
     plt.ylabel("True label")
     
     return cf_matrix
-
-
-
-def sys_evaluate(preds,probs,label):
-    
-    UAR = sklearn.metrics.recall_score(label, preds, average='macro')
-    ROC = sklearn.metrics.roc_auc_score(label, probs)
-    report = {'UAR':UAR, 'ROC':ROC}
-    
-    return report
 
 
 

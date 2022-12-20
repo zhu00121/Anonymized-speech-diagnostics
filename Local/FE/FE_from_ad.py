@@ -8,6 +8,7 @@ from tqdm import tqdm
 import librosa
 from srmrpy import srmr
 import sigproc as sp
+from Utils import util
 
 
 def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, **kwargs):
@@ -42,7 +43,7 @@ def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, *
     assert np.isfinite(ot).all(), "NaN in extracted features!"
 
     # Save result as a pkl file
-    sp.save_as_pkl(save_path,ot)
+    util.save_as_pkl(save_path,ot)
 
     return ot
 
@@ -79,8 +80,8 @@ def FE_from_dataset(metadata_path:str, feature_dir:str, fs:int, feature_type:str
     for ad_path in tqdm(all_audio_path):
         # get sample id
         _, tail = os.path.split(ad_path)
-        sample_id = sp.remove_suffix(tail,'.wav')
-        sample_id = sp.remove_suffix(sample_id,'.flac')
+        sample_id = util.remove_suffix(tail,'.wav')
+        sample_id = util.remove_suffix(sample_id,'.flac')
         feature_path = os.path.join(feature_dir,'%s_%d.pkl'%(sample_id,uniq)) # feature path
         all_feature_path.append(feature_path)
         ot = FE_from_single_ad(ad_path, fs, feature_type, feature_path, **kwargs)
@@ -123,13 +124,14 @@ if __name__ == '__main__':
     #     )
 
     # test feature extraction from the whole dataset
-    kwargs = {'n_mels':64, 'win_len':256, 'hop_len':64, 'n_fft':512}
+    # kwargs = {'n_mels':64, 'win_len':256, 'hop_len':64, 'n_fft':512}
+    kwargs = {'n_cochlear_filters':23,'low_freq':0, 'min_cf':2,'max_cf':32,'require_ave':False}
     ot = FE_from_dataset(
 
-        metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
-        feature_dir='./Features/CSS/original/openSMILE',
+        metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv',
+        feature_dir='./Features/Cambridge/original/mtr',
         fs=16000,
-        feature_type='openSMILE',
+        feature_type='msr',
         anonymize='og',
         **kwargs
     )
