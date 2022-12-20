@@ -126,10 +126,10 @@ if __name__ == '__main__':
     kwargs = {'n_mels':64, 'win_len':256, 'hop_len':64, 'n_fft':512}
     ot = FE_from_dataset(
 
-        metadata_path='/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_v2.csv',
-        feature_dir='./Features/DiCOVA2/original/logmelspec',
+        metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
+        feature_dir='./Features/CSS/original/openSMILE',
         fs=16000,
-        feature_type='logmelspec',
+        feature_type='openSMILE',
         anonymize='og',
         **kwargs
     )
