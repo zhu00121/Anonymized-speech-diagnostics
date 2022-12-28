@@ -1,4 +1,5 @@
-import os
+import os,sys
+sys.path.append("./Local/")
 import joblib
 import pickle as pkl
 import numpy as np
@@ -21,7 +22,7 @@ def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, *
     if kwargs.get('zeropad_len'):
         ad = sp.zeropad(x=ad,fs=fs,length=kwargs['zeropad_len'])
 
-    assert feature_type in ['logmelspec','openSMILE','msr'], "Incorrect feature type"
+    assert feature_type in ['logmelspec','openSMILE','msr','mtr'], "Incorrect feature type"
 
     if feature_type == 'logmelspec':
         ot = sp.calc_melspec(x=ad, fs=fs, n_mels=kwargs['n_mels'], \
@@ -34,7 +35,7 @@ def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, *
     elif feature_type == 'openSMILE':
         ot = sp.calc_openSMILE(audio_path=audio_path)
 
-    elif feature_type == 'msr':
+    elif feature_type == 'msr' or 'mtr':
         ot = sp.calc_mtr(x=ad, fs=fs, \
             n_cochlear_filters=kwargs['n_cochlear_filters'], low_freq=kwargs['low_freq'],\
             min_cf=kwargs['min_cf'], max_cf=kwargs['max_cf'], \
@@ -65,7 +66,7 @@ def FE_from_dataset(metadata_path:str, feature_dir:str, fs:int, feature_type:str
         os.makedirs(feature_dir)
         print('Input feature directory had been created successfully')
 
-    assert feature_type in ['logmelspec','openSMILE','msr'], "Incorrect feature type"
+    assert feature_type in ['logmelspec','openSMILE','msr', 'mtr'], "Incorrect feature type"
     assert anonymize in ['og','mcadams','ss','hifigan'], "Input anonymize approach is not supported"
 
     df_md = pd.read_csv(metadata_path) # load metadata
@@ -128,8 +129,8 @@ if __name__ == '__main__':
     kwargs = {'n_cochlear_filters':23,'low_freq':0, 'min_cf':2,'max_cf':32,'require_ave':False}
     ot = FE_from_dataset(
 
-        metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv',
-        feature_dir='./Features/Cambridge/original/mtr',
+        metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
+        feature_dir='./Features/DiCOVA2/original/msr',
         fs=16000,
         feature_type='msr',
         anonymize='og',

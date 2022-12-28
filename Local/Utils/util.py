@@ -1,5 +1,6 @@
 import json
 import os
+import pickle as pkl
 
 def save_as_json(data,save_path):
     """
@@ -17,7 +18,7 @@ def save_as_pkl(save_path:str,variable):
     """
     Save result as a pickle file.
     """
-    assert not os.path.exists(save_path), 'Existing file with same name.')
+    assert not os.path.exists(save_path), 'Existing file with same name.'
     
     with open(save_path, "wb") as outfile:
         pkl.dump(variable, outfile, pkl.HIGHEST_PROTOCOL)
