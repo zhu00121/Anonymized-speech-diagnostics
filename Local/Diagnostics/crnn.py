@@ -161,29 +161,30 @@ class crnn_cov_3d(nn.Module):
 
 if __name__ == '__main__':
 
-    # toy_input = torch.randn(16,1,150,23,8)
-    # model = crnn_cov_3d(num_class=1,msr_size=(23,8),rnn_hidden_size=128,dropout=0.7,tem_fac=[2,3,1])
-    # toy_output = model(toy_input)
-    # print(toy_output)
-
     from argparse import ArgumentParser
     import json
 
-    parser = ArgumentParser()
-    parser.add_argument('--num_class', type=int, default=1, choices=[1,2])
-    parser.add_argument('--msr_size', type=tuple, default=(23,8))
-    parser.add_argument('--rnn_hidden_size', type=int, default=128)
-    parser.add_argument('--dropout', type=int, default=0.7)
-    parser.add_argument('--tem_fac', type=list, default=[2,3,1])
-    args = parser.parse_args()
+    # parser = ArgumentParser()
+    # parser.add_argument('--num_class', type=int, default=1, choices=[1,2])
+    # parser.add_argument('--msr_size', type=tuple, default=(23,8))
+    # parser.add_argument('--rnn_hidden_size', type=int, default=128)
+    # parser.add_argument('--dropout', type=int, default=0.7)
+    # parser.add_argument('--tem_fac', type=list, default=[2,3,1])
+    # args = parser.parse_args()
 
-    util.save_as_json(args.__dict__,'./Config/crnn_config.txt')
+    # util.save_as_json(args.__dict__,'./Config/crnn_config.txt')
     # with open('./Config/crnn_config.txt', 'w') as f:
     #     json.dump(args.__dict__, f)
 
-    # parser = ArgumentParser()
-    # args = parser.parse_args()
-    # with open('commandline_args.txt', 'r') as f:
-    #     args.__dict__ = json.load(f)
-
-    # print(args)
+    parser = ArgumentParser()
+    args = parser.parse_args()
+    args.__dict__ = util.load_json('./Config/crnn_config.txt')
+    print(args)
+    toy_input = torch.randn(16,1,150,23,8)
+    model = crnn_cov_3d(num_class=args.num_class,\
+                        msr_size=args.msr_size,
+                        rnn_hidden_size=args.rnn_hidden_size,
+                        dropout=args.dropout,
+                        tem_fac=args.tem_fac)
+    toy_output = model(toy_input)
+    print(toy_output)

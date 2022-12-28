@@ -13,6 +13,16 @@ def save_as_json(data,save_path):
     return 0
 
 
+def load_json(save_path:str):
+    """
+    Load a saved .json file.
+    """
+    assert os.path.exists(save_path), "json file does not exist!"
+    with open(save_path, 'r') as f:
+        saved_json = json.load(f)
+    return saved_json
+
+
 def save_as_pkl(save_path:str,variable):
 
     """

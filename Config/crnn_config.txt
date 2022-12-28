@@ -1,0 +1,1 @@
+{"num_class": 1, "msr_size": [23, 8], "rnn_hidden_size": 128, "dropout": 0.7, "tem_fac": [2, 3, 1]}
