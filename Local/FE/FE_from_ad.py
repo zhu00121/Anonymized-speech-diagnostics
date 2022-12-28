@@ -101,38 +101,16 @@ def FE_from_dataset(metadata_path:str, feature_dir:str, fs:int, feature_type:str
 
 if __name__ == '__main__':
 
-    # # test logmelspec 
-    # kwargs = {'n_mels':64, 'win_len':256, 'hop_len':64, 'n_fft':512}
-
-    # ot = FE_from_single_ad('/mnt/d/projects/COVID-datasets/CSS/audio/dev_001.wav',\
-    #     fs=16000, feature_type='logmelspec', \
-    #     save_path='/mnt/d/projects/Anonymized-speech-diagnostics/Features/CSS/original/toy.pkl',
-    #     **kwargs)
-
-    # test openSMILE
-    # no kwargs needed. TBD: add GeMaps features or other ComParE versions.
-    # ot = FE_from_single_ad('/mnt/d/projects/COVID-datasets/CSS/audio/dev_001.wav',\
-    #     fs=16000, feature_type='openSMILE',\
-    #     save_path='/mnt/d/projects/Anonymized-speech-diagnostics/Features/CSS/original/toy_2.pkl'        
-    #     )
-    
-    # test MTR/MSR
-    # kwargs = {'n_cochlear_filters':23,'low_freq':0, 'min_cf':2,'max_cf':32,'require_ave':True}
-    # ot = FE_from_single_ad('/mnt/d/projects/COVID-datasets/CSS/audio/dev_001.wav',\
-    #     fs=16000, feature_type='msr',\
-    #     save_path='/mnt/d/projects/Anonymized-speech-diagnostics/Features/CSS/original/toy_2.pkl',\
-    #     **kwargs
-    #     )
-
     # test feature extraction from the whole dataset
     # kwargs = {'n_mels':64, 'win_len':256, 'hop_len':64, 'n_fft':512}
-    kwargs = {'n_cochlear_filters':23,'low_freq':0, 'min_cf':2,'max_cf':32,'require_ave':False}
-    ot = FE_from_dataset(
+    # kwargs = {'n_cochlear_filters':23,'low_freq':0, 'min_cf':2,'max_cf':32,'require_ave':True}
+    # util.save_as_json(kwargs,'./Config/logmelspec_config')
+    # ot = FE_from_dataset(
 
-        metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
-        feature_dir='./Features/DiCOVA2/original/msr',
-        fs=16000,
-        feature_type='msr',
-        anonymize='og',
-        **kwargs
-    )
+    #     metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
+    #     feature_dir='./Features/DiCOVA2/original/msr',
+    #     fs=16000,
+    #     feature_type='msr',
+    #     anonymize='og',
+    #     **kwargs
+    # )

@@ -52,3 +52,29 @@ def remove_suffix(input_string, suffix):
     if suffix and input_string.endswith(suffix):
         return input_string[:-len(suffix)]
     return input_string
+
+
+def convertType(val):
+	def subutil(val):
+		try: 
+			val = int(val)
+		except:
+			try:
+				val = float(val)
+			except:
+				if val in ['True', 'TRUE', 'true']:
+					val = True
+				elif val in ['False','FALSE','false']:
+					val = False
+				elif val in ['None']:
+					val = None
+				else:
+					val = val
+		return val
+
+	if ',' in val:
+		val = val.split(',')
+		val = [subutil(item) for item in val]
+	else:
+		val = subutil(val)
+	return val

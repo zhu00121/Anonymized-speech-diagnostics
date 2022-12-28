@@ -3,10 +3,13 @@ Model architecture of logmelspec-BiLSTM system.
 This script is from DiCOVA2 challenge baseline repository.
 """
 
+import sys
+sys.path.append('./Local/')
 import torch
 import torch.nn as nn
 from torch.nn.utils.rnn import pad_sequence, pad_packed_sequence, pack_padded_sequence
 import numpy as np
+from Utils import util
 
 #%%
 def getNet(arch):
@@ -204,3 +207,21 @@ class LSTMClassifier(nn.Module):
 		Forward pass through the network and loss computation
 		'''
 		return self.criterion(torch.stack(self.predict(inputs)),torch.stack(targets))
+
+
+# %%
+if __name__ == '__main__':
+
+    from argparse import ArgumentParser
+    import configparser
+    from torchsummary import summary
+
+    model_args = {'input_dimension':196}
+    parser = configparser.ConfigParser()
+    parser.read('./Config/bilstm_config')
+    for key in parser['default'].keys():
+        model_args[key]=util.convertType(parser['default'][key])
+
+    print(model_args)
+    model = getNet('LSTMClassifier')(model_args)
+    print(model.parameters)
