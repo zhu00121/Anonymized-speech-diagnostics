@@ -10,8 +10,10 @@ import numpy as np
 import random
 import sklearn.preprocessing
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV, RepeatedStratifiedKFold, PredefinedSplit
-from sklearn.svm import SVC,LinearSVC
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split, GridSearchCV, RepeatedStratifiedKFold, PredefinedSplit
+from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
@@ -21,31 +23,36 @@ import plotly.graph_objects as go
 import plotly.subplots as sp
 import plotly.io as pio
 from Utils import util
+from tqdm import tqdm
 
 """
 Functions used to train and evaluate models.
 """
 
 def train_model(X_train,y_train,
-                model:str,
                 clf_kwargs,
                 random_state=26):
-    
     """
     Given training data and labels, conduct model (shallow ones) training 
     with N-fold CV (or predefined split).
     """
-    model_choice = ['svm','rf','dt']
-    assert model in model_choice, " available models: svm/rf/dt "
+    model_choice = ['svm','pca-svm']
+    assert clf_kwargs['model'] in model_choice, " available models: svm/pca-svm "
     
-    if model == 'svm':
-        m = SVC(kernel = 'linear',probability=True)
-        params = {'C':[0.00001,0.00005,0.0001,0.0005,0.001,0.005,0.007,0.01,0.05,0.07,0.1,0.5,0.7]}
-    
-    elif model == 'rf':
-        m = RandomForestClassifier()
-        params = {'n_estimators': [5,10,30,50,100,200],
-                 'max_depth': [2, 5, 10, 20]}
+    if clf_kwargs['model'] == 'svm':
+        pipe = Pipeline([("scale", StandardScaler()), \
+                        ("svm", SVC(kernel = 'linear',probability=True))
+                        ])
+
+    elif clf_kwargs['model'] == 'pca-svm':
+        pipe = Pipeline([("scale", StandardScaler()), \
+                        ("pca", PCA(n_components=clf_kwargs['n_components'])), \
+                        ("svm", SVC(kernel = 'linear',probability=True))
+                        ])
+
+    param_grid = dict(
+                     svm__C = [0.00001,0.00005,0.0001,0.0005,0.001,0.005,0.007,0.01,0.05,0.07,0.1,0.5,0.7]
+                     )
     
     if clf_kwargs['pds'] == 'no':
         """ N-fold stratefied cross-validation """
@@ -57,8 +64,8 @@ def train_model(X_train,y_train,
         cv = PredefinedSplit(clf_kwargs['split_index'])
     
     # start training
-    print('Training models...')
-    clf = GridSearchCV(m, param_grid=params,cv=cv,scoring='roc_auc')
+    print('Training model...')
+    clf = GridSearchCV(pipe, param_grid=param_grid,cv=cv,scoring='roc_auc')
     clf.fit(X_train,y_train)
     print('Training finished. Best parameters are shown as follows:')
     print (clf.best_params_)
@@ -82,13 +89,14 @@ def model_predict(x_test,y_test,pt_clf):
     Make predictions using a pretrained classifier and obtain evaluation metrics.
     """
     preds = pt_clf.predict(x_test)
-    probs = pt_clf.predict_proba(x_test)
+    probs = pt_clf.predict_proba(x_test)[:, 1]
     UAR = sklearn.metrics.recall_score(y_test, preds, average='macro')
     ROC = sklearn.metrics.roc_auc_score(y_test, probs)
     fpr, tpr, _ = sklearn.metrics.roc_curve(y_test, probs, pos_label=1)
-    report = {'UAR':UAR, 'ROC':ROC, 'TPR':tpr, 'TNR':1-fpr}
+    report = {'UAR':UAR, 'ROC':ROC, 'TPR':tpr, 'TNR':fpr}
     
     return report
+
 
 def eva_model(x_test,y_test,pt_clf,num_bs=1000,save_path=None):
     
@@ -96,15 +104,15 @@ def eva_model(x_test,y_test,pt_clf,num_bs=1000,save_path=None):
     Evaluate the model performance using N times Bootstrap on test data.
     """
     result = {'UAR':[], 'ROC':[], 'TPR':[], 'TNR':[],\
-        'UAR_AVE':0, 'ROC_AVE':0, 'TPR_AVE':0, 'TNR_AVE':0}
-        
-    for bs in range(num_bs):
+        'UAR_AVE':None, 'ROC_AVE':None, 'TPR_AVE':None, 'TNR_AVE':None}
+
+    for bs in tqdm(range(num_bs)):
 
         idx = list(range(x_test.shape[0]))
         bs_idx = random.choices(idx,k=x_test.shape[0])
         x_test_bs = x_test[bs_idx,:]
-        x_test_bs = y_test[bs_idx]
-        result_bs = model_predict(x_test,y_test,pt_clf)
+        y_test_bs = y_test[bs_idx]
+        result_bs = model_predict(x_test_bs,y_test_bs,pt_clf)
         result['UAR'].append(result_bs['UAR'])
         result['ROC'].append(result_bs['ROC'])
         result['TPR'].append(result_bs['TPR'])
@@ -112,13 +120,16 @@ def eva_model(x_test,y_test,pt_clf,num_bs=1000,save_path=None):
     
     result['UAR_AVE'] = mean_confidence_interval(result['UAR'])
     result['ROC_AVE'] = mean_confidence_interval(result['ROC'])
-    result['TPR_AVE'] = mean_confidence_interval(result['TPR'])
-    result['TNR_AVE'] = mean_confidence_interval(result['TNR'])
+    # result['TPR_AVE'] = mean_confidence_interval(result['TPR'])
+    # result['TNR_AVE'] = mean_confidence_interval(result['TNR'])
+    print('-----')
+    print('CI on AUC-ROC: '+result['ROC_AVE'])
+    print('CI on UAR: '+result['UAR_AVE'])
 
     # save results
     if save_path is not None:
-        util.save_as_pkl(result,save_path)
-        print('Results are save to: '+save_path)
+        util.save_as_pkl(save_path,result)
+        print('Results are saved to '+save_path)
 
     return result
 

@@ -1,6 +1,8 @@
 import json
 import os
 import pickle as pkl
+import pandas as pd
+import numpy as np
 
 def save_as_json(data,save_path):
     """
@@ -78,3 +80,34 @@ def convertType(val):
 	else:
 		val = subutil(val)
 	return val
+
+
+def load_feat(metadata_path:str,feat_name:str,split:str):
+    """
+    Load features and labels using file paths stored in the metadata.csv file.
+    """
+    assert feat_name in ['openSMILE','logmelspec','msr','mtr'], "Feature type is not supported"
+
+    feat_col = 'feature_path_'+feat_name
+    df_md = pd.read_csv(metadata_path)
+    df_md = df_md[df_md['split']==split]
+    feat_path_list = df_md[feat_col].to_list()
+    label_list = df_md['label'].to_list()
+    assert len(feat_path_list) == len(label_list), "number of features is not equal to number of labels"
+    num_sample = len(feat_path_list)
+    feat_all = []
+    for idx in range(num_sample):
+        feat = load_pkl(feat_path_list[idx])
+        feat_all.append(feat)
+
+    feat_all = np.asarray(feat_all).squeeze()
+
+    # sanity check on feature _shape
+    if feat_name == 'msr' or feat_name == 'logmelspec':
+        assert feat_all.ndim == 3, "msr and logmelspec features should be 3-dimensional"
+    elif feat_name == 'openSMILE':
+        assert feat_all.ndim == 2, "openSMILE features should be 2-dimensional"
+    elif feat_name == 'mtr':
+        assert feat_all.ndim == 4, "mtr features should be 4-dimensional"
+
+    return feat_all, np.asarray(label_list).squeeze()
