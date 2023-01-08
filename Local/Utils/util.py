@@ -3,12 +3,25 @@ import os
 import pickle as pkl
 import pandas as pd
 import numpy as np
+import torch
+from tqdm import tqdm
+
+
+def print_to_file(file_path:str,print_content:str):
+    """
+    Save print content to a .txt file for quick accessing experiment results.
+    """
+    with open(file_path, "a") as f:
+        print(print_content, file=f)
+
+    return 0
+
 
 def save_as_json(data,save_path):
     """
     Save results as .json file.
     """
-    assert not os.path.exists(save_path), "File existing with the same name."
+    # assert not os.path.exists(save_path), "File existing with the same name."
     with open(save_path, "w") as outfile:
         json.dump(data, outfile)
     
@@ -19,6 +32,9 @@ def load_json(save_path:str):
     """
     Load a saved .json file.
     """
+    if not os.path.exists(save_path):
+        print(save_path)
+
     assert os.path.exists(save_path), "json file does not exist!"
     with open(save_path, 'r') as f:
         saved_json = json.load(f)
@@ -43,11 +59,20 @@ def load_pkl(save_path:str):
     """
     Load saved pickle file.
     """
-    assert os.path.exists(save_path), "pkl file does not exist!"
+    assert os.path.exists(save_path), "pkl file does not exist in %s!"%(save_path)
     with open(save_path, "rb") as infile:
         saved_fea = pkl.load(infile)
 
     return saved_fea
+
+
+def load_model(clf_path:str,mode:str):
+
+    if mode == 'sklearn':
+        clf = load_pkl(clf_path)
+    elif mode == 'pytroch':
+        clf = torch.load(clf_path)
+    return clf
 
 
 def remove_suffix(input_string, suffix):
@@ -88,26 +113,31 @@ def load_feat(metadata_path:str,feat_name:str,split:str):
     """
     assert feat_name in ['openSMILE','logmelspec','msr','mtr'], "Feature type is not supported"
 
+    print("Loading data...")
     feat_col = 'feature_path_'+feat_name
     df_md = pd.read_csv(metadata_path)
+    # check if the input split names exist (e.g., valid/validation)
+    if (not (df_md['split'].eq(split)).any()) and (split == 'valid'):
+        split = 'validation'
     df_md = df_md[df_md['split']==split]
     feat_path_list = df_md[feat_col].to_list()
-    label_list = df_md['label'].to_list()
+    label_list = df_md['label'].to_numpy()
+    label_list = label_list.reshape(label_list.shape[0],1)
     assert len(feat_path_list) == len(label_list), "number of features is not equal to number of labels"
     num_sample = len(feat_path_list)
     feat_all = []
-    for idx in range(num_sample):
+    for idx in tqdm(range(num_sample)):
         feat = load_pkl(feat_path_list[idx])
         feat_all.append(feat)
 
     feat_all = np.asarray(feat_all).squeeze()
 
-    # sanity check on feature _shape
-    if feat_name == 'msr' or feat_name == 'logmelspec':
+    # sanity check on feature shape
+    if feat_name == 'logmelspec':
         assert feat_all.ndim == 3, "msr and logmelspec features should be 3-dimensional"
-    elif feat_name == 'openSMILE':
+    elif feat_name == 'msr' or feat_name == 'openSMILE ':
         assert feat_all.ndim == 2, "openSMILE features should be 2-dimensional"
     elif feat_name == 'mtr':
         assert feat_all.ndim == 4, "mtr features should be 4-dimensional"
 
-    return feat_all, np.asarray(label_list).squeeze()
+    return feat_all, label_list

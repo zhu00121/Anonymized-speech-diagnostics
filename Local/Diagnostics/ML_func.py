@@ -6,6 +6,7 @@ Created on Thu Sep  8 20:54:45 2022
 @e-mail: Yi.Zhu@inrs.ca
 """
 
+import os
 import numpy as np
 import random
 import sklearn.preprocessing
@@ -14,21 +15,22 @@ from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, GridSearchCV, RepeatedStratifiedKFold, PredefinedSplit
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, roc_auc_score, recall_score
+import torch
+from torch.utils.data import ConcatDataset, DataLoader
 import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.subplots as sp
 import plotly.io as pio
 from Utils import util
+import covid_dataset
 from tqdm import tqdm
 
 """
 Functions used to train and evaluate models.
 """
-
+#%% sklearn0based ones
 def train_model(X_train,y_train,
                 clf_kwargs,
                 random_state=26):
@@ -73,6 +75,235 @@ def train_model(X_train,y_train,
     return clf
 
 
+def model_predict(x_test,y_test,pt_clf,raw=False):
+    
+    """
+    Make predictions using a pretrained classifier and obtain evaluation metrics.
+    """
+    preds = pt_clf.predict(x_test)
+    probs = pt_clf.predict_proba(x_test)[:, 1]
+    UAR = recall_score(y_test, preds, average='macro')
+    ROC = roc_auc_score(y_test, probs)
+    fpr, tpr, _ = sklearn.metrics.roc_curve(y_test, probs, pos_label=1)
+    report = {'UAR':UAR, 'ROC':ROC, 'TPR':tpr, 'TNR':fpr}
+
+    if raw:
+        return probs,preds
+    
+    return report
+
+
+# %% Pytorch-based ones
+def train_loop(model, train_dataloader, device, optimizer, criterion):
+    
+    output = {'total_score': 0.,
+              'total_loss': 0.}
+
+    running_loss = 0 
+    model.to(device)
+    model.train()
+    preds_all = []
+    labs_all = []
+    itr = 0
+    for _, data in enumerate(train_dataloader):
+        
+        itr += 1
+        inputs,labs=data['data'].to(device),data['label'].to(device)
+        # BP
+        optimizer.zero_grad()
+        ot=model(inputs)
+        loss=criterion(ot,labs)
+        loss.backward()
+        # AUC-ROC score
+        preds = torch.sigmoid(ot.detach())
+        # preds = ot.detach()
+        preds = preds.cpu().numpy()
+        labs = labs.cpu().numpy()
+        preds_all += list(preds)
+        labs_all += list(labs)
+        optimizer.step()
+        
+        # Calculate loss
+        running_loss += loss.item()*inputs.size(0)
+        
+    train_loss = running_loss/len(train_dataloader)
+    train_score = roc_auc_score(labs_all,preds_all)
+    output['total_score'] = train_score
+    output['total_loss'] = train_loss
+    print('Training Loss: %.3f | AUC-ROC score: %.3f'%(train_loss,train_score)) 
+    
+    return output['total_score'], output['total_loss']
+
+
+def valid_loop(model, valid_dataloader, device, criterion):
+
+    output = {'total_score': 0.,
+              'total_loss': 0.}
+
+    running_loss=0
+    model.to(device)
+    model.eval()
+    preds_all = []
+    labs_all = []
+    itr = 0
+    with torch.no_grad():
+        for _,data in enumerate(valid_dataloader):
+            
+            itr += 1
+            
+            inputs,labs=data['data'].to(device),data['label'].to(device)
+            ot=model(inputs)
+            loss=criterion(ot,labs)
+            # AUC-ROC score
+            preds = torch.sigmoid(ot.detach())
+            # preds = ot.detach()
+            preds = preds.cpu().numpy()
+            labs = labs.cpu().numpy()
+            preds_all += list(preds)
+            labs_all += list(labs)
+            # Calculate loss
+            running_loss += loss.item()*inputs.size(0)
+  
+    val_loss = running_loss/len(valid_dataloader)
+    val_score = roc_auc_score(labs_all,preds_all)
+    output['total_score'] = val_score
+    output['total_loss'] = val_loss
+    
+    print('Validation Loss: %.3f | AUC-ROC score: %.3f'%(val_loss,val_score)) 
+
+    return output['total_score'], output['total_loss']
+
+
+def set_seed(seed,device):
+
+    torch.backends.cudnn.deterministic = True
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    if device.type=='cuda':
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
+
+def train_main(model,\
+               device,
+               optimizer,
+               criterion,
+               dataset,
+               feat:str,
+               batch_sizes:list,
+               save_model_to:str,
+               metadata_path:str,
+               mode:str='held-out',
+               filters=None):
+    
+    # sanity check
+    assert mode in ['held-out','joint'], "Unknown training mode"
+    assert dataset in ['CSS','DiCOVA2','Cambridge'], "Unknown dataset name"
+
+    # prepare dataloaders
+    train_set = covid_dataset._covid_dataset(dataset=dataset,split='train',feat=feat,metadata_path=metadata_path)
+    test_set = covid_dataset._covid_dataset(dataset=dataset,split='test',feat=feat,metadata_path=metadata_path,filters=filters)
+    if dataset == 'CSS' or dataset == "Cambridge":
+        valid_set = covid_dataset._covid_dataset(dataset=dataset,split='valid',feat=feat,metadata_path=metadata_path)
+
+    if mode == 'joint' and (dataset == 'CSS' or dataset == "Cambridge"):
+        train_set = ConcatDataset([train_set, valid_set])
+    
+    train_loader = DataLoader(dataset=train_set, batch_size=batch_sizes[0], shuffle=True)
+    test_loader = DataLoader(dataset=test_set, batch_size=batch_sizes[0], shuffle=False)
+    if dataset == 'CSS' or dataset == "Cambridge":
+        valid_loader = DataLoader(dataset=valid_set, batch_size=batch_sizes[0], shuffle=True)
+
+    # training strategies
+    valid_score_best = 0
+    patience = 5
+    num_epochs = 40
+    score = {'train':[],'valid':[],'test':[]}
+
+    if mode == 'held-out':
+        print('Use held-out validation set')
+        for e in range(num_epochs):
+            train_score,_ = train_loop(model, train_loader, device, optimizer, criterion)
+            valid_score,_ = valid_loop(model, valid_loader, device, criterion)
+            test_score = test_loop(model, test_loader, device, raw=False)
+
+            # TODO: remove test scores
+            print('epoch {}: train score={:.3f} valid score={:.3f} test score={:.3f}'\
+                .format(e,train_score,valid_score,test_score))
+            
+            score['train'].append(train_score)
+            score['valid'].append(valid_score)
+            score['test'].append(test_score)
+            
+            if e >25:
+                if valid_score > valid_score_best:
+                    print('Best score: {}. Saving model...'.format(valid_score))
+                    torch.save(model.state_dict(), os.path.join(save_model_to,'clf.pt'))
+                    valid_score_best = valid_score
+                else:
+                    patience -= 1
+                    print('Score did not improve! {} <= {}. Patience left: {}'.format(valid_score,
+                                                                                    valid_score_best,
+                                                                                    patience))
+                if patience == 0:
+                    print('patience reduced to 0. Training Finished.')
+                    break
+
+    elif mode == 'joint':
+        print('Joining training and validation set')
+        _std = []
+        for e in range(num_epochs):
+            train_score, _ = train_loop(model, train_loader, device, optimizer, criterion)
+            test_score = test_loop(model, test_loader, device, raw=False)
+
+            print('epoch {}: train score={:.3f} test score={:.3f}'.format(e,train_score,test_score))
+            
+            score['train'].append(train_score)
+            score['test'].append(test_score)
+            if e>=3:
+                _std.append(np.std(score['train'][-3:]))
+            # if train_score > .90:
+            #     print('Training score reaches the threshold. Training stops.')
+            #     print('Best score: {}. Saving model...'.format(test_score))
+            #     torch.save(model.state_dict(), save_model_to)
+            #     break
+    
+    return score['test'], _std
+
+
+def test_loop(model, test_dataloader, device, raw=False):
+    # predict
+    y_pred = []
+    y_prob = []
+    lab_list = []
+    model.eval()
+    with torch.no_grad():
+        for _,data in enumerate(test_dataloader):
+            inputs,labs=data['data'].to(device),data['label'].to(device)
+            ot = model(inputs)
+            probs = torch.sigmoid(ot.detach())
+            probs = probs.cpu().numpy()
+            # convert probabilities to binary predictions
+            preds = np.full_like(probs, 1)
+            preds[probs<0.5] = 0
+            y_prob += list(probs)
+            y_pred += list(preds)
+            lab_list += list(labs.cpu().numpy())
+    
+    y_prob = np.array(y_prob).squeeze()
+    y_pred = np.array(y_pred).squeeze()
+    lab_list = np.array(lab_list)
+    test_score = roc_auc_score(lab_list, y_prob)
+
+    # print('\ntest score -> ' + str(test_score*100) + '%')
+    if raw:
+        return y_prob, y_pred
+
+    return test_score
+
+
+# %% Universal functions used to evaluate all types of models
 def mean_confidence_interval(data):
     """
     Calculate mean and confidence intervals.
@@ -83,48 +314,62 @@ def mean_confidence_interval(data):
     return m, m-h, m+h
 
 
-def model_predict(x_test,y_test,pt_clf):
-    
-    """
-    Make predictions using a pretrained classifier and obtain evaluation metrics.
-    """
-    preds = pt_clf.predict(x_test)
-    probs = pt_clf.predict_proba(x_test)[:, 1]
-    UAR = sklearn.metrics.recall_score(y_test, preds, average='macro')
-    ROC = sklearn.metrics.roc_auc_score(y_test, probs)
-    fpr, tpr, _ = sklearn.metrics.roc_curve(y_test, probs, pos_label=1)
-    report = {'UAR':UAR, 'ROC':ROC, 'TPR':tpr, 'TNR':fpr}
-    
-    return report
-
-
-def eva_model(x_test,y_test,pt_clf,num_bs=1000,save_path=None):
+def eva_model(pt_clf,framework,x_test=None,y_test=None,test_dataloader=None,device=None,num_bs=1000,save_path=None,print_path=None,notes=None):
     
     """
     Evaluate the model performance using N times Bootstrap on test data.
     """
-    result = {'UAR':[], 'ROC':[], 'TPR':[], 'TNR':[],\
-        'UAR_AVE':None, 'ROC_AVE':None, 'TPR_AVE':None, 'TNR_AVE':None}
+    result = {'UAR':[], 'ROC':[],
+        'UAR_AVE':None, 'ROC_AVE':None,
+        'UAR_TRUE':None, 'ROC_TRUE':None}
 
+    # select framework and get predictions
+    if framework == 'sklearn':
+        result_true = model_predict(x_test,y_test,pt_clf,raw=True)
+    elif framework == 'pytorch':
+        result_true = test_loop(pt_clf,test_dataloader,device,raw=True)
+    
+    # get true UAR and AUC-ROC scores
+    result['UAR_TRUE'] = roc_auc_score(y_test,result_true[0])
+    result['ROC_TRUE'] = recall_score(y_test,result_true[1],average='macro')
+
+    # get CIs on UAR and AUC-ROC
     for bs in tqdm(range(num_bs)):
 
-        idx = list(range(x_test.shape[0]))
-        bs_idx = random.choices(idx,k=x_test.shape[0])
-        x_test_bs = x_test[bs_idx,:]
-        y_test_bs = y_test[bs_idx]
-        result_bs = model_predict(x_test_bs,y_test_bs,pt_clf)
-        result['UAR'].append(result_bs['UAR'])
-        result['ROC'].append(result_bs['ROC'])
-        result['TPR'].append(result_bs['TPR'])
-        result['TNR'].append(result_bs['TNR'])
+        num_sample = len(y_test)
+        idx = list(range(num_sample))
+        bs_idx = random.choices(idx,k=num_sample)
+        bs_probs = result_true[0][bs_idx]
+        bs_preds = result_true[1][bs_idx]
+        result['UAR'].append(roc_auc_score(y_test,bs_preds))
+        result['ROC'].append(recall_score(y_test,bs_probs,average='macro'))
+        # result['TPR'].append(result_bs['TPR'])
+        # result['TNR'].append(result_bs['TNR'])
     
     result['UAR_AVE'] = mean_confidence_interval(result['UAR'])
     result['ROC_AVE'] = mean_confidence_interval(result['ROC'])
     # result['TPR_AVE'] = mean_confidence_interval(result['TPR'])
     # result['TNR_AVE'] = mean_confidence_interval(result['TNR'])
+
+    if print_path == None:
+        print_path = os.path.join(os.path.split(save_path)[0],'summary.txt')
+
     print('-----')
-    print('CI on AUC-ROC: '+result['ROC_AVE'])
-    print('CI on UAR: '+result['UAR_AVE'])
+    util.print_to_file(print_path,'-----')
+    if notes is not None:
+        util.print_to_file(print_path,notes)
+    print('True AUC-ROC: %.3f'%(result['ROC_TRUE']))
+    util.print_to_file(print_path,'True AUC-ROC: %.3f'%(result['ROC_TRUE']))
+    print('True UAR: %.3f'%(result['UAR_TRUE']))
+    util.print_to_file(print_path,'True UAR: %.3f'%(result['UAR_TRUE']))
+    print('Average AUC-ROC: %.3f'%(result['ROC_AVE'][0]))
+    util.print_to_file(print_path,'Average AUC-ROC: %.3f'%(result['ROC_AVE'][0]))
+    print('CI on AUC-ROC: %.3f-%.3f'%(result['ROC_AVE'][1],result['ROC_AVE'][2]))
+    util.print_to_file(print_path,'CI on AUC-ROC: %.3f-%.3f'%(result['ROC_AVE'][1],result['ROC_AVE'][2]))
+    print('Average UAR: %.3f'%(result['UAR_AVE'][0]))
+    util.print_to_file(print_path,'Average UAR: %.3f'%(result['UAR_AVE'][0]))
+    print('CI on UAR: %.3f-%.3f'%(result['UAR_AVE'][1],result['UAR_AVE'][2]))
+    util.print_to_file(print_path,'CI on UAR: %.3f-%.3f'%(result['UAR_AVE'][1],result['UAR_AVE'][2]))
 
     # save results
     if save_path is not None:
@@ -278,8 +523,7 @@ def draw_roc(num_rep:int,results_list:list):
         gridcolor   = c_grid,
         constrain   = 'domain',
         linecolor   = 'black')
-    
-    
+
     fig.show()
     pio.write_image(fig,
                     r'YOUR_OWN_PATH',
@@ -289,3 +533,70 @@ def draw_roc(num_rep:int,results_list:list):
                     scale=6)
     
     return 0
+
+
+def minmax_scaler(data,axis:tuple):
+    data_min = data.min(axis=axis, keepdims=True)
+    data_max = data.max(axis=axis, keepdims=True)
+    data = (data - data_min)/(data_max - data_min + 1e-15)
+    
+    return data
+
+
+def standard_scaler(data,axis:tuple):
+    data_mean = data.mean(axis=axis, keepdims=True)
+    data_std = data.std(axis=axis, keepdims=True)
+    data = (data - data_mean)/(data_std+1e-15)
+    
+    return data
+
+
+
+def create_filter(hei=23,wid=8,mask_hei:tuple=None,mask_wid:tuple=None):
+    
+    f = np.zeros((hei,wid))
+    
+    h_low = mask_hei[0]
+    h_upp = mask_hei[1]
+    w_low = mask_wid[0]
+    w_upp = mask_wid[1]
+
+    f[h_low:h_upp,w_low:w_upp] = 1 # filtering region with 1
+    
+    return f
+
+
+def filter_ndarray(x,hei=23,wid=8,mask_hei:tuple=None,mask_wid:tuple=None):
+    
+    assert (x.shape[-2]==hei) & (x.shape[-1]==wid), "mask size needs to be the same as input"
+    f = create_filter(hei,wid,mask_hei,mask_wid)
+    filtered_input = np.multiply(x,f)
+    
+    return filtered_input
+
+
+def create_multi_filter(hei=23,wid=8,
+                        filters:dict={}):
+    
+    num_filter = len(filters)
+    f = np.zeros((hei,wid))
+    
+    for i in range(num_filter):
+        filt = list(filters.values())[i]
+        h_low = filt[0][0]
+        h_upp = filt[0][1]
+        w_low = filt[1][0]
+        w_upp = filt[1][1]
+        f[h_low:h_upp,w_low:w_upp] = 1 # filling region with 1
+    
+    return f
+    
+
+def multi_filter(x,hei=23,wid=8,
+                 filters:dict={}):
+
+    filtered_input = x.copy()
+    f = create_multi_filter(hei=hei,wid=wid,filters=filters)
+    filtered_input = np.multiply(x,f)
+    
+    return filtered_input

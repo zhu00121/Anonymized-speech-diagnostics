@@ -24,7 +24,10 @@ def infer_uni(feat:str,train_set:str,train_ano_mode:str,test_set:str,test_ano_mo
     if clf_dir is None:
         clf_dir = './Results/Pretrained'
     folder_name = os.path.join(clf_dir,'%s_%s_%s_%s'%(train_set,train_ano_mode,feat,model))
-    pt_clf = util.load_pkl(os.path.join(folder_name,'clf.pkl'))
+    if model == 'svm' or model == 'pca-svm':
+        clf = util.load_model(os.path.join(folder_name,'clf.pkl'),mode='sklearn')
+    elif model == 'bilstm' or model == 'crnn':
+        clf = util.load_model(os.path.join(folder_name,'clf.h5'),mode='pytorch')
     pt_clf_kwargs = util.load_json(os.path.join(folder_name,'clf_kwargs'))
 
     # load test data
@@ -35,11 +38,12 @@ def infer_uni(feat:str,train_set:str,train_ano_mode:str,test_set:str,test_ano_mo
     if res_dir is None:
         res_dir = './Results/performance'
     result_path = os.path.join(res_dir,'%s_%s_%s_%s_%s_%s.pkl')%(train_set,train_ano_mode,test_set,test_ano_mode,feat,model)
+    notes = '%s-%s-%s-%s-%s-%s'%(train_set,train_ano_mode,test_set,test_ano_mode,feat,model)
 
-    print('Evaluating diagnostics performance...')
+    print('Evaluating diagnostics performance with 1000 bootstrapping...')
     # for 1-D features
     if feat == 'openSMILE' or feat == 'msr':
-        result = ML_func.eva_model(test_data,test_label,pt_clf,save_path=result_path) # results are automatically saved
+        result = ML_func.eva_model(test_data,test_label,clf,save_path=result_path,notes=notes) # results are automatically saved
     
     # TODO: other features
 
@@ -47,7 +51,7 @@ def infer_uni(feat:str,train_set:str,train_ano_mode:str,test_set:str,test_ano_mo
 
 
 # %%
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
     # exp_kwargs_dir = './Config/exp_config/CSS_og_CSS_og_openSMILE_pca-svm'
     # kwargs = util.load_json(exp_kwargs_dir)

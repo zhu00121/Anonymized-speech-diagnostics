@@ -1,0 +1,1 @@
+{"model": "pca-svm", "pds": "no", "n_components": 100, "n_splits": 3, "n_repeats": 3}

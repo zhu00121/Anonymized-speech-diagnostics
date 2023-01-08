@@ -1,0 +1,72 @@
+-----
+Cambridge-og-Cambridge-og-msr-svm
+True AUC-ROC: 0.601
+True UAR: 0.559
+Average AUC-ROC: 0.602
+CI on AUC-ROC: 0.541-0.664
+Average UAR: 0.559
+CI on UAR: 0.512-0.607
+-----
+Cambridge-og-CSS-og-msr-svm
+True AUC-ROC: 0.444
+True UAR: 0.518
+Average AUC-ROC: 0.441
+CI on AUC-ROC: 0.372-0.511
+Average UAR: 0.516
+CI on UAR: 0.469-0.563
+-----
+Cambridge-og-DiCOVA2-og-msr-svm
+True AUC-ROC: 0.577
+True UAR: 0.490
+Average AUC-ROC: 0.576
+CI on AUC-ROC: 0.454-0.698
+Average UAR: 0.490
+CI on UAR: 0.419-0.560
+-----
+CSS-og-Cambridge-og-msr-svm
+True AUC-ROC: 0.462
+True UAR: 0.497
+Average AUC-ROC: 0.462
+CI on AUC-ROC: 0.398-0.525
+Average UAR: 0.498
+CI on UAR: 0.469-0.526
+-----
+CSS-og-CSS-og-msr-svm
+True AUC-ROC: 0.713
+True UAR: 0.569
+Average AUC-ROC: 0.713
+CI on AUC-ROC: 0.644-0.781
+Average UAR: 0.568
+CI on UAR: 0.522-0.614
+-----
+CSS-og-DiCOVA2-og-msr-svm
+True AUC-ROC: 0.612
+True UAR: 0.564
+Average AUC-ROC: 0.612
+CI on AUC-ROC: 0.489-0.735
+Average UAR: 0.565
+CI on UAR: 0.497-0.632
+-----
+DiCOVA2-og-Cambridge-og-msr-svm
+True AUC-ROC: 0.551
+True UAR: 0.515
+Average AUC-ROC: 0.549
+CI on AUC-ROC: 0.486-0.613
+Average UAR: 0.516
+CI on UAR: 0.494-0.538
+-----
+DiCOVA2-og-CSS-og-msr-svm
+True AUC-ROC: 0.563
+True UAR: 0.516
+Average AUC-ROC: 0.564
+CI on AUC-ROC: 0.489-0.640
+Average UAR: 0.517
+CI on UAR: 0.484-0.550
+-----
+DiCOVA2-og-DiCOVA2-og-msr-svm
+True AUC-ROC: 0.715
+True UAR: 0.548
+Average AUC-ROC: 0.719
+CI on AUC-ROC: 0.618-0.819
+Average UAR: 0.550
+CI on UAR: 0.493-0.606

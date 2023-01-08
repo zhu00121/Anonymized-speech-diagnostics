@@ -2,12 +2,16 @@
 Set up COVID speech datasets.
 """
 
-import os
+import os,sys
+sys.path.append("./Local/")
 import torch
 import torchaudio
 import pickle
 import numpy as np
 import random
+from torch.utils.data import Dataset, DataLoader
+from Utils import util
+import ML_func
 
 # %% DiCOVA2 
 class DiCOVA_2_Dataset(torch.utils.data.Dataset):
@@ -138,3 +142,79 @@ class DiCOVA_2_Dataset(torch.utils.data.Dataset):
 
 
 # %% TODO: add CSS and Cambridge sets
+
+class _covid_dataset(Dataset):
+    """
+    This class can be used to prepare datasets for all three COVID datasets and two types of
+    features.
+    """
+    def __init__(self,\
+                 dataset:str,
+                 feat:str,
+                 split:str,
+                 metadata_path:str,
+                 scale:str='standard',
+                 filters:tuple=None):
+        
+        # sanity check
+        assert split in ['train','valid','test']
+        assert feat in ['logmelspec','mtr']
+        assert dataset in ['CSS','DiCOVA2','Cambridge'], 'Unknown dataset!'
+
+        # load desired features and labels
+        data, label = util.load_feat(metadata_path,feat,split)
+        # sanity check on number of features and labels
+        assert data.shape[0] == label.shape[0], 'data size does not match label size!'
+        
+        # some pre-processing
+        if feat == 'mtr':
+            # adjust axes for downstream model
+            data = np.moveaxis(data,[1,2,3],[2,3,1])
+            data = data[:,np.newaxis,...]
+            data = 20*np.log10(data) # power to db
+        elif feat == 'logmelspec':
+            data = np.moveaxis(data,[1,2],[2,1])
+
+        # scale data (file-level)
+        if feat == 'mtr': axis = (2,3,4)
+        elif feat == 'logmelspec': axis = (1,2)
+        if scale == 'minmax':
+            data = ML_func.minmax_scaler(data,axis)
+        elif scale == 'standard':
+            data = ML_func.standard_scaler(data,axis) 
+
+        # spectral-temporal saliency masks
+        if filters is not None:
+            data = ML_func.multi_filter(x=data,hei=23,wid=8,filters=filters)
+        
+        # value check
+        assert np.nan not in data, "NaN in data"
+
+        self.data = data
+        self.label = label
+    
+    def __getitem__(self,idx):
+        _data = torch.FloatTensor(self.data[idx])
+        _label = torch.FloatTensor(self.label[idx])
+        sample = {"data": _data, "label": _label}
+        return sample
+    
+    def __len__(self):
+        return self.data.shape[0]
+
+#%%
+if __name__ == '__main__':
+
+    # data, label = util.load_feat('/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',\
+    #                              'mtr',
+    #                              'train')
+    # print(label.shape)
+
+    import matplotlib.pyplot as plt
+    toy_dataset = _covid_dataset(dataset='DiCOVA2',\
+                                 feat='logmelspec',
+                                 split='train',
+                                 metadata_path='/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_og.csv',
+                                 scale='standard',
+                                 filters=None)
+    print(toy_dataset.label.shape)

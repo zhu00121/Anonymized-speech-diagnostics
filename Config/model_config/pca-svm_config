@@ -1,0 +1,1 @@
+{"pipeline_kwargs": {"model": "pca-svm", "pds": "yes", "n_components": 100}}

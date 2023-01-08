@@ -157,11 +157,11 @@ class LSTMClassifier(nn.Module):
 		self.input_dimension = args['input_dimension']
 		self.lstm_encoder_units = args['lstm_encoder_units']
 		self.lstm_num_layers = args['lstm_num_layers']
-		self.lstm_bidirectional = args['lstm_bidirectional']
+		self.lstm_bidirectional = args.get('lstm_bidirectional',True)
 		self.lstm_dropout_p = args['lstm_dropout']
 		self.lstm_pooling = args['lstm_pooling']
-		self.apply_mean_norm = args['apply_mean_norm']
-		self.apply_var_norm = args['apply_var_norm']
+		self.apply_mean_norm = args.get('apply_mean_norm',False)
+		self.apply_var_norm = args.get('apply_var_norm',False)
 		
 		encoder_args = {'input_dimension':self.input_dimension, 'units':self.lstm_encoder_units, 'num_layers':self.lstm_num_layers, 'bidirectional': self.lstm_bidirectional, 'apply_mean_norm':self.apply_mean_norm, 'apply_var_norm':self.apply_var_norm, 'dropout':self.lstm_dropout_p, 'pooltype':self.lstm_pooling}
 
@@ -208,20 +208,71 @@ class LSTMClassifier(nn.Module):
 		'''
 		return self.criterion(torch.stack(self.predict(inputs)),torch.stack(targets))
 
+#%% 
+class BiLSTM(nn.Module):
 
+	def __init__(self,args):
+
+		super(BiLSTM,self).__init__()
+
+		# model parameters
+		self.input_dimension = args['input_dimension']
+		self.lstm_encoder_units = args['lstm_encoder_units']
+		self.lstm_num_layers = args['lstm_num_layers']
+		self.lstm_bidirectional = args.get('lstm_bidirectional',True)
+		self.lstm_dropout_p = args['lstm_dropout']
+		self.lstm_pooling = args['lstm_pooling']
+		self.apply_mean_norm = args.get('apply_mean_norm',True)
+		self.apply_var_norm = args.get('apply_var_norm',True)
+
+		# layers
+		self.rnn = nn.LSTM(input_size=self.input_dimension,\
+						   hidden_size=self.lstm_encoder_units,
+						   num_layers=self.lstm_num_layers,
+						   batch_first=True,
+						   dropout=self.lstm_dropout_p,
+						   bidirectional=self.lstm_bidirectional
+						   )
+		self.fc = nn.Sequential(
+
+			nn.Linear(2*self.lstm_encoder_units, 64, bias=True),
+			nn.Tanh(),
+			nn.Dropout(p=self.lstm_dropout_p, inplace=False),
+			nn.Linear(64,1,bias=True)
+		)
+	
+	def forward(self,x):
+
+		ot, _ = self.rnn(x)
+		# average along time axis
+		ot = torch.mean(ot,axis=1)
+		ot = self.fc(ot)
+
+		return ot
 # %%
+# if __name__ == '__main__':
+
+	# from argparse import ArgumentParser
+	# import configparser
+	# from torchsummary import summary
+
+	# model_args = {'input_dimension':196}
+	# parser = configparser.ConfigParser()
+	# parser.read('./Config/bilstm_config_default')
+
+
+	# for key in parser['default'].keys():
+	#     model_args[key]=util.convertType(parser['default'][key])
+
+	# print(model_args)
+	# model = getNet('LSTMClassifier')(model_args)
+	# print(model.parameters)
+
 if __name__ == '__main__':
 
-    from argparse import ArgumentParser
-    import configparser
-    from torchsummary import summary
-
-    model_args = {'input_dimension':196}
-    parser = configparser.ConfigParser()
-    parser.read('./Config/bilstm_config')
-    for key in parser['default'].keys():
-        model_args[key]=util.convertType(parser['default'][key])
-
-    print(model_args)
-    model = getNet('LSTMClassifier')(model_args)
-    print(model.parameters)
+	kwargs = util.load_json('./Config/model_config/bilstm_config')
+	model = BiLSTM(kwargs['pipeline_kwargs'])
+	print(model.parameters)
+	toy_input = torch.randn(10,150,192)
+	ot = model(toy_input)
+	print(ot)

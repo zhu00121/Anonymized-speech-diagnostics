@@ -1,1 +1,1 @@
-{"n_mels": 64, "win_len": 256, "hop_len": 64, "n_fft": 512}
+{"n_mels": 64, "win_len": 256, "hop_len": 64, "n_fft": 512, "zeropad_len": 10}

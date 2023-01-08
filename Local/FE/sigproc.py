@@ -52,6 +52,7 @@ def calc_melspec(x, fs, n_mels, win_length, hop_length, n_fft, require_log=True)
 
     """
     Calculate (log) mel-spectrogram from a signal.
+    Returns: np.ndarray [shape=(…, n_mels, t)]
     """
     mel_spec = librosa.feature.melspectrogram(y=x, sr=fs, n_mels=n_mels, \
             win_length = win_length, hop_length = hop_length, \
@@ -80,12 +81,14 @@ def calc_mtr(x, fs, n_cochlear_filters, low_freq, min_cf, max_cf, fast=True, nor
     """
     Calculate 3D modulation tensorgram representation (MTR). Each snapshot is a filterbank-applied modulation
     spectrum.
+    Returns: np.ndarray [shape=(23, 8, t)]
     """
     _, mtr = srmr(x, fs=fs, n_cochlear_filters=n_cochlear_filters, \
         low_freq=low_freq, min_cf=min_cf, max_cf=max_cf, fast=fast, norm=norm)
     
     if require_ave:
         mtr = np.mean(mtr,axis=2).squeeze() # average over the time axis
+        mtr = mtr.flatten()
 
     return mtr
 

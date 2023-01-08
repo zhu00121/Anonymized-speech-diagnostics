@@ -1,0 +1,72 @@
+-----
+Cambridge-og-Cambridge-og-openSMILE-pca-svm
+True AUC-ROC: 0.554
+True UAR: 0.556
+Average AUC-ROC: 0.553
+CI on AUC-ROC: 0.491-0.615
+Average UAR: 0.555
+CI on UAR: 0.502-0.608
+-----
+Cambridge-og-CSS-og-openSMILE-pca-svm
+True AUC-ROC: 0.727
+True UAR: 0.622
+Average AUC-ROC: 0.726
+CI on AUC-ROC: 0.661-0.790
+Average UAR: 0.622
+CI on UAR: 0.579-0.664
+-----
+Cambridge-og-DiCOVA2-og-openSMILE-pca-svm
+True AUC-ROC: 0.699
+True UAR: 0.689
+Average AUC-ROC: 0.697
+CI on AUC-ROC: 0.603-0.792
+Average UAR: 0.688
+CI on UAR: 0.609-0.768
+-----
+CSS-og-Cambridge-og-openSMILE-pca-svm
+True AUC-ROC: 0.602
+True UAR: 0.525
+Average AUC-ROC: 0.601
+CI on AUC-ROC: 0.540-0.663
+Average UAR: 0.524
+CI on UAR: 0.496-0.553
+-----
+CSS-og-CSS-og-openSMILE-pca-svm
+True AUC-ROC: 0.722
+True UAR: 0.602
+Average AUC-ROC: 0.723
+CI on AUC-ROC: 0.661-0.785
+Average UAR: 0.602
+CI on UAR: 0.549-0.654
+-----
+CSS-og-DiCOVA2-og-openSMILE-pca-svm
+True AUC-ROC: 0.699
+True UAR: 0.674
+Average AUC-ROC: 0.699
+CI on AUC-ROC: 0.609-0.789
+Average UAR: 0.674
+CI on UAR: 0.597-0.751
+-----
+DiCOVA2-og-Cambridge-og-openSMILE-pca-svm
+True AUC-ROC: 0.533
+True UAR: 0.500
+Average AUC-ROC: 0.532
+CI on AUC-ROC: 0.466-0.597
+Average UAR: 0.500
+CI on UAR: 0.483-0.517
+-----
+DiCOVA2-og-CSS-og-openSMILE-pca-svm
+True AUC-ROC: 0.581
+True UAR: 0.520
+Average AUC-ROC: 0.581
+CI on AUC-ROC: 0.503-0.659
+Average UAR: 0.520
+CI on UAR: 0.485-0.555
+-----
+DiCOVA2-og-DiCOVA2-og-openSMILE-pca-svm
+True AUC-ROC: 0.711
+True UAR: 0.587
+Average AUC-ROC: 0.709
+CI on AUC-ROC: 0.601-0.817
+Average UAR: 0.587
+CI on UAR: 0.517-0.657

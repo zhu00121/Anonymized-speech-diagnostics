@@ -24,25 +24,21 @@ from tqdm import tqdm
 # %% CRNN
 class crnn_cov_3d(nn.Module):
     
-    def __init__(self, num_class:int, 
-                 msr_size:tuple, 
-                 rnn_hidden_size:int, 
-                 dropout:float,
-                 tem_fac:list):
-        
+    def __init__(self,kwargs):
+
         super(crnn_cov_3d, self).__init__()
-        
-        self.num_class = num_class
-        self.rnn_hidden_size = rnn_hidden_size
-        self.dp = nn.Dropout(p=dropout)
-        self.num_freq = msr_size[0]
-        self.num_mod = msr_size[1]
-        # self.dp_3d = nn.Dropout3d(p=dropout)
+
+        # define parameters
+        self.num_class = kwargs['num_class']
+        self.rnn_hidden_size = kwargs['rnn_hidden_size']
+        self.dp = nn.Dropout(p=kwargs['dropout'])
+        self.num_freq, self.num_mod = kwargs['msr_size']
         self.relu = nn.ReLU(inplace=True)
         self.sig = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        self.tem_fac = tem_fac # temporal pooling factors for each cnn block. E.g., [2,3,1]
+        self.tem_fac = kwargs['tem_fac'] # temporal pooling factors for each cnn block. E.g., [2,3,1]
         
+        # define layers
         self.cnn1 = nn.Sequential(
             nn.Conv3d(1,4,kernel_size=(3,3,3),stride=(1,1,1),padding=(1,1,1)),
             nn.BatchNorm3d(4),
@@ -64,24 +60,13 @@ class crnn_cov_3d(nn.Module):
             self.relu
             )
         
-                
-        # self.cnn4 = nn.Sequential(
-        #     nn.Conv3d(4,1,kernel_size=(3,3,3),stride=(1,1,1),padding=(1,1,1)),
-        #     nn.BatchNorm3d(1),
-        #     nn.MaxPool3d((21,1,1)),
-        #     self.relu
-        #     )5
-        
         self.downsample = nn.MaxPool3d((2,2,2))
                 
-        
         self.CNNblock = nn.Sequential(
             self.cnn1,
             self.cnn2,
             self.cnn3
             )
-        
-        # self.Att = CBAM_Att(channel=4)
         
         self.fc1 = nn.Sequential(
             nn.Linear(4*self.num_freq*self.num_mod, 128),
@@ -89,8 +74,7 @@ class crnn_cov_3d(nn.Module):
             self.relu,
             self.dp
             )
-        
-        # RNN
+
         self.rnn1 = nn.GRU(input_size=128, 
                             hidden_size=self.rnn_hidden_size,
                             num_layers=3,
@@ -99,14 +83,7 @@ class crnn_cov_3d(nn.Module):
         
         self.layer_norm = nn.LayerNorm([2*self.rnn_hidden_size,int(150/np.product(self.tem_fac))])
         self.maxpool = nn.MaxPool1d(int(150/np.product(self.tem_fac)))
-        
-        # self.fc2 = nn.Sequential(
-        #     nn.Linear(512,64),
-        #     nn.BatchNorm1d(64),
-        #     self.relu,
-        #     nn.Linear(64,1)
-        #     )
-        
+
         self.fc2 = nn.Linear(self.rnn_hidden_size*2,self.num_class)
         
         self.initialize_weights()
@@ -125,10 +102,6 @@ class crnn_cov_3d(nn.Module):
 
         # 3D-CNN block
         ot = self.CNNblock(x)
-        # print(ot.size())
-        
-        # Attention CBAM
-        # ot = self.Att(ot)
         # print(ot.size())
         
         # flatten
@@ -161,30 +134,8 @@ class crnn_cov_3d(nn.Module):
 
 if __name__ == '__main__':
 
-    from argparse import ArgumentParser
-    import json
-
-    # parser = ArgumentParser()
-    # parser.add_argument('--num_class', type=int, default=1, choices=[1,2])
-    # parser.add_argument('--msr_size', type=tuple, default=(23,8))
-    # parser.add_argument('--rnn_hidden_size', type=int, default=128)
-    # parser.add_argument('--dropout', type=int, default=0.7)
-    # parser.add_argument('--tem_fac', type=list, default=[2,3,1])
-    # args = parser.parse_args()
-
-    # util.save_as_json(args.__dict__,'./Config/crnn_config.txt')
-    # with open('./Config/crnn_config.txt', 'w') as f:
-    #     json.dump(args.__dict__, f)
-
-    parser = ArgumentParser()
-    args = parser.parse_args()
-    args.__dict__ = util.load_json('./Config/crnn_config.txt')
-    print(args)
+    kwargs = util.load_json('./Config/model_config/crnn_config')
+    model = crnn_cov_3d(kwargs)
     toy_input = torch.randn(16,1,150,23,8)
-    model = crnn_cov_3d(num_class=args.num_class,\
-                        msr_size=args.msr_size,
-                        rnn_hidden_size=args.rnn_hidden_size,
-                        dropout=args.dropout,
-                        tem_fac=args.tem_fac)
     toy_output = model(toy_input)
     print(toy_output)
