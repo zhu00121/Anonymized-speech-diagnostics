@@ -158,7 +158,7 @@ class _covid_dataset(Dataset):
         
         # sanity check
         assert split in ['train','valid','test']
-        assert feat in ['logmelspec','mtr']
+        assert feat in ['logmelspec','mtr','mtr_v2','mtr_v3']
         assert dataset in ['CSS','DiCOVA2','Cambridge'], 'Unknown dataset!'
 
         # load desired features and labels
@@ -167,7 +167,7 @@ class _covid_dataset(Dataset):
         assert data.shape[0] == label.shape[0], 'data size does not match label size!'
         
         # some pre-processing
-        if feat == 'mtr':
+        if 'mtr' in feat:
             # adjust axes for downstream model
             data = np.moveaxis(data,[1,2,3],[2,3,1])
             data = data[:,np.newaxis,...]
@@ -176,7 +176,7 @@ class _covid_dataset(Dataset):
             data = np.moveaxis(data,[1,2],[2,1])
 
         # scale data (file-level)
-        if feat == 'mtr': axis = (2,3,4)
+        if 'mtr' in feat: axis = (2,3,4)
         elif feat == 'logmelspec': axis = (1,2)
         if scale == 'minmax':
             data = ML_func.minmax_scaler(data,axis)

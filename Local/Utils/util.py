@@ -46,7 +46,7 @@ def save_as_pkl(save_path:str,variable):
     """
     Save result as a pickle file.
     """
-    assert not os.path.exists(save_path), 'Existing file with same name.'
+    # assert not os.path.exists(save_path), 'Existing file with same name.'
     
     with open(save_path, "wb") as outfile:
         pkl.dump(variable, outfile, pkl.HIGHEST_PROTOCOL)
@@ -111,7 +111,7 @@ def load_feat(metadata_path:str,feat_name:str,split:str):
     """
     Load features and labels using file paths stored in the metadata.csv file.
     """
-    assert feat_name in ['openSMILE','logmelspec','msr','mtr'], "Feature type is not supported"
+    assert feat_name in ['openSMILE','logmelspec','msr','mtr', 'mtr_v2','mtr_v3'], "Feature type is not supported"
 
     print("Loading data...")
     feat_col = 'feature_path_'+feat_name

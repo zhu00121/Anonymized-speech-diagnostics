@@ -22,7 +22,7 @@ def train_uni(feat:str,train_set:str,ano_mode:str,metadata_path:str,clf_dir:str=
     for further testing.
     """
     # sanity check
-    assert feat in ['openSMILE','logmelspec','msr','mtr'], "Input mode is not supported"
+    assert feat in ['openSMILE','logmelspec','msr','mtr','mtr_v2','mtr_v3'], "Input mode is not supported"
     assert train_set in ['CSS','DiCOVA2','Cambridge'], "Input train set is not found"
     assert ano_mode in ['og','mcadams'] # TODO: add more anonymization modes
     if not ano_mode in metadata_path: warnings.warn("Inconsistency between anonymization mode and metadata file name. Ensure the correct metadata file is used.")
@@ -69,7 +69,7 @@ def train_uni(feat:str,train_set:str,ano_mode:str,metadata_path:str,clf_dir:str=
         util.save_as_pkl(os.path.join(folder_name,'clf.pkl'), clf)
         print('Trained model is saved as %s'%(os.path.join(folder_name,'clf.pkl')))
 
-    elif feat == 'logmelspec' or feat == 'mtr':
+    elif feat == 'logmelspec' or 'mtr' in feat:
 
         if feat == 'logmelspec':
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -80,12 +80,13 @@ def train_uni(feat:str,train_set:str,ano_mode:str,metadata_path:str,clf_dir:str=
             optimizer=optim.Adam(model.parameters(), lr=clf_kwargs['lr'], weight_decay=clf_kwargs['weight_decay'], amsgrad=True)
             criterion = torch.nn.BCEWithLogitsLoss()
 
-        elif feat == 'mtr':
+        elif 'mtr' in feat:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             # set RNG for reproducibility
             ML_func.set_seed(clf_kwargs['RNG'],device)
             # define classifier, optimizer and loss function
             model = crnn.crnn_cov_3d(clf_kwargs).to(device)
+            # model.load_state_dict(torch.load('/mnt/d/projects/COVID-datasets/CRNN-pretrained/compare_best.pt'))
             optimizer = optim.Adam(list(model.parameters()),lr=clf_kwargs['lr'],weight_decay=clf_kwargs['weight_decay'])
             criterion = torch.nn.BCEWithLogitsLoss()
 
@@ -118,8 +119,8 @@ if __name__ == '__main__':
     
     # util.save_as_json(kwargs,'./Config/exp_config/og/CSS_og_CSS_og_openSMILE_pca-svm')
     torch.cuda.empty_cache()
-    clf_kwargs = util.load_json('./Config/model_config/bilstm_config')
-    test_score, _std = train_uni(feat='logmelspec',\
+    clf_kwargs = util.load_json('./Config/model_config/crnn_config')
+    test_score, _std = train_uni(feat='mtr_v2',\
                         train_set='CSS',
                         ano_mode='og',
                         metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',

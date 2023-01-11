@@ -1,0 +1,1 @@
+{"n_cochlear_filters": 23, "low_freq": 125, "min_cf": 3, "max_cf": 32, "require_ave": false, "zeropad_len": 10}

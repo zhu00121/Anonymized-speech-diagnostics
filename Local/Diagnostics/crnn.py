@@ -135,7 +135,8 @@ class crnn_cov_3d(nn.Module):
 if __name__ == '__main__':
 
     kwargs = util.load_json('./Config/model_config/crnn_config')
-    model = crnn_cov_3d(kwargs)
+    model = crnn_cov_3d(kwargs['pipeline_kwargs'])
+    model.load_state_dict(torch.load('/mnt/d/projects/COVID-datasets/CRNN-pretrained/compare_best.pt'))
     toy_input = torch.randn(16,1,150,23,8)
     toy_output = model(toy_input)
     print(toy_output)

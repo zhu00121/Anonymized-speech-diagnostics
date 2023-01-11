@@ -1,1 +1,1 @@
-{"pipeline_kwargs": {"model": "crnn", "pds": "yes", "num_class": 1, "msr_size": [23, 8], "rnn_hidden_size": 128, "dropout": 0.7, "tem_fac": [2, 3, 1], "lr": 0.00005, "weight_decay": 1e-4, "RNG": 47, "batch_sizes": [16,16,16]}}
+{"pipeline_kwargs": {"model": "crnn", "pds": "yes", "num_class": 1, "msr_size": [23, 8], "rnn_hidden_size": 128, "dropout": 0.7, "tem_fac": [2, 3, 1], "lr": 0.00005, "weight_decay": 1e-4, "RNG": 52, "batch_sizes": [32,16,16]}}

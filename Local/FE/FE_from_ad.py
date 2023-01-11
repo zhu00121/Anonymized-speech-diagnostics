@@ -22,7 +22,7 @@ def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, *
     if kwargs.get('zeropad_len'):
         ad = sp.zeropad(x=ad,fs=fs,length=kwargs['zeropad_len'])
 
-    assert feature_type in ['logmelspec','openSMILE','msr','mtr'], "Incorrect feature type"
+    assert feature_type in ['logmelspec','openSMILE','msr','mtr', 'mtr_v2', 'mtr_v3'], "Incorrect feature type"
 
     if feature_type == 'logmelspec':
         ot = sp.calc_melspec(x=ad, fs=fs, n_mels=kwargs['n_mels'], \
@@ -35,7 +35,7 @@ def FE_from_single_ad(audio_path:str, fs:int, feature_type:str, save_path:str, *
     elif feature_type == 'openSMILE':
         ot = sp.calc_openSMILE(audio_path=audio_path)
 
-    elif feature_type == 'msr' or 'mtr':
+    elif feature_type == 'msr' or 'mtr' in feature_type:
         ot = sp.calc_mtr(x=ad, fs=fs, \
             n_cochlear_filters=kwargs['n_cochlear_filters'], low_freq=kwargs['low_freq'],\
             min_cf=kwargs['min_cf'], max_cf=kwargs['max_cf'], \
@@ -66,7 +66,7 @@ def FE_from_dataset(metadata_path:str, feature_dir:str, fs:int, feature_type:str
         os.makedirs(feature_dir)
         print('Input feature directory had been created successfully')
 
-    assert feature_type in ['logmelspec','openSMILE','msr', 'mtr'], "Incorrect feature type"
+    assert feature_type in ['logmelspec','openSMILE','msr', 'mtr','mtr_v2','mtr_v3'], "Incorrect feature type"
     assert anonymize in ['og','mcadams','ss'], "Input anonymize approach is not supported"
 
     df_md = pd.read_csv(metadata_path) # load metadata
@@ -114,62 +114,62 @@ if __name__ == '__main__':
     #     **kwargs
     # )
 
-    kwargs = util.load_json('./Config/feat_config/logmelspec_config')
+    # kwargs = util.load_json('./Config/feat_config/logmelspec_config')
+    # ot = FE_from_dataset(
+    #     metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
+    #     feature_dir='./Features/CSS/original/logmelspec',
+    #     fs=16000,
+    #     feature_type='logmelspec',
+    #     anonymize='og',
+    #     **kwargs
+    # )
+
+    # kwargs = util.load_json('./Config/feat_config/logmelspec_config')
+    # ot = FE_from_dataset(
+    #     metadata_path='/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_og.csv',
+    #     feature_dir='./Features/DiCOVA2/original/logmelspec',
+    #     fs=16000,
+    #     feature_type='logmelspec',
+    #     anonymize='og',
+    #     **kwargs
+    # )
+
+    # kwargs = util.load_json('./Config/feat_config/logmelspec_config')
+    # ot = FE_from_dataset(
+    #     metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv',
+    #     feature_dir='./Features/Cambridge/original/logmelspec',
+    #     fs=16000,
+    #     feature_type='logmelspec',
+    #     anonymize='og',
+    #     **kwargs
+    # )
+
+    kwargs = util.load_json('./Config/feat_config/mtr_v2_config')
     ot = FE_from_dataset(
         metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
-        feature_dir='./Features/CSS/original/logmelspec',
+        feature_dir='./Features/CSS/original/mtr_v2',
         fs=16000,
-        feature_type='logmelspec',
+        feature_type='mtr_v2',
         anonymize='og',
         **kwargs
     )
 
-    kwargs = util.load_json('./Config/feat_config/logmelspec_config')
+    kwargs = util.load_json('./Config/feat_config/mtr_v2_config')
     ot = FE_from_dataset(
         metadata_path='/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_og.csv',
-        feature_dir='./Features/DiCOVA2/original/logmelspec',
+        feature_dir='./Features/DiCOVA2/original/mtr_v2',
         fs=16000,
-        feature_type='logmelspec',
+        feature_type='mtr_v2',
         anonymize='og',
         **kwargs
     )
 
-    kwargs = util.load_json('./Config/feat_config/logmelspec_config')
+    kwargs = util.load_json('./Config/feat_config/mtr_v2_config')
     ot = FE_from_dataset(
         metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv',
-        feature_dir='./Features/Cambridge/original/logmelspec',
+        feature_dir='./Features/Cambridge/original/mtr_v2',
         fs=16000,
-        feature_type='logmelspec',
-        anonymize='og',
-        **kwargs
-    )
-
-    kwargs = util.load_json('./Config/feat_config/mtr_config')
-    ot = FE_from_dataset(
-        metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
-        feature_dir='./Features/CSS/original/mtr',
-        fs=16000,
-        feature_type='mtr',
-        anonymize='og',
-        **kwargs
-    )
-
-    kwargs = util.load_json('./Config/feat_config/mtr_config')
-    ot = FE_from_dataset(
-        metadata_path='/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_og.csv',
-        feature_dir='./Features/DiCOVA2/original/mtr',
-        fs=16000,
-        feature_type='mtr',
-        anonymize='og',
-        **kwargs
-    )
-
-    kwargs = util.load_json('./Config/feat_config/mtr_config')
-    ot = FE_from_dataset(
-        metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv',
-        feature_dir='./Features/Cambridge/original/mtr',
-        fs=16000,
-        feature_type='mtr',
+        feature_type='mtr_v2',
         anonymize='og',
         **kwargs
     )

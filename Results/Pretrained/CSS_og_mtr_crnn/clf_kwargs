@@ -1,1 +1,1 @@
-{"model": "crnn", "pds": "yes", "num_class": 1, "msr_size": [23, 8], "rnn_hidden_size": 128, "dropout": 0.7, "tem_fac": [2, 3, 1], "lr": 5e-05, "weight_decay": 0.0001, "RNG": 41, "batch_sizes": [16, 16, 16]}
+{"model": "crnn", "pds": "yes", "num_class": 1, "msr_size": [23, 8], "rnn_hidden_size": 256, "dropout": 0.4, "tem_fac": [2, 3, 1], "lr": 5e-05, "weight_decay": 0.0001, "RNG": 42, "batch_sizes": [16, 16, 16]}
