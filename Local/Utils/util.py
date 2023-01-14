@@ -70,7 +70,7 @@ def load_model(clf_path:str,mode:str):
 
     if mode == 'sklearn':
         clf = load_pkl(clf_path)
-    elif mode == 'pytroch':
+    elif mode == 'pytorch':
         clf = torch.load(clf_path)
     return clf
 

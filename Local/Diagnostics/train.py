@@ -91,7 +91,7 @@ def train_uni(feat:str,train_set:str,ano_mode:str,metadata_path:str,clf_dir:str=
             criterion = torch.nn.BCEWithLogitsLoss()
 
         # start training
-        test_score_list, std_list = ML_func.train_main(model,device,optimizer,criterion,
+        clf = ML_func.train_main(model,device,optimizer,criterion,
                            train_set,feat,clf_kwargs['batch_sizes'],
                            folder_name,metadata_path,
                            mode='joint',filters=clf_kwargs.get('filters',None))
@@ -100,7 +100,7 @@ def train_uni(feat:str,train_set:str,ano_mode:str,metadata_path:str,clf_dir:str=
     util.save_as_json(clf_kwargs,os.path.join(folder_name,'clf_kwargs'))
     print('Model parameters are saved in %s'%(os.path.join(folder_name,'clf_kwargs')))
 
-    return test_score_list, std_list
+    return clf
 
 
 # %%
@@ -120,16 +120,16 @@ if __name__ == '__main__':
     # util.save_as_json(kwargs,'./Config/exp_config/og/CSS_og_CSS_og_openSMILE_pca-svm')
     torch.cuda.empty_cache()
     clf_kwargs = util.load_json('./Config/model_config/crnn_config')
-    test_score, _std = train_uni(feat='mtr_v2',\
-                        train_set='CSS',
+    model = train_uni(feat='mtr',\
+                        train_set='Cambridge',
                         ano_mode='og',
-                        metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
+                        metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv',
                         **clf_kwargs['pipeline_kwargs'])
 
-    import matplotlib.pyplot as plt
-    plt.figure()
-    plt.plot(test_score[2:])
-    plt.plot(_std[1:])
-    plt.plot(np.diff(_std,n=1))
-    plt.plot(_std[1:]+np.abs(np.diff(_std,n=1)))
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # plt.figure()
+    # plt.plot(test_score[2:])
+    # plt.plot(_std[1:])
+    # plt.plot(np.diff(_std,n=1))
+    # plt.plot(_std[1:]+np.abs(np.diff(_std,n=1)))
+    # plt.show()

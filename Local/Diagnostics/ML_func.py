@@ -88,7 +88,7 @@ def model_predict(x_test,y_test,pt_clf,raw=False):
     report = {'UAR':UAR, 'ROC':ROC, 'TPR':tpr, 'TNR':fpr}
 
     if raw:
-        return probs,preds
+        return preds,probs
     
     return report
 
@@ -194,7 +194,7 @@ def train_main(model,\
                batch_sizes:list,
                save_model_to:str,
                metadata_path:str,
-               mode:str='held-out',
+               mode:str='joint',
                filters=None):
     
     # sanity check
@@ -211,14 +211,14 @@ def train_main(model,\
         train_set = ConcatDataset([train_set, valid_set])
     
     train_loader = DataLoader(dataset=train_set, batch_size=batch_sizes[0], shuffle=True)
-    test_loader = DataLoader(dataset=test_set, batch_size=batch_sizes[0], shuffle=False)
+    test_loader = DataLoader(dataset=test_set, batch_size=batch_sizes[2], shuffle=False)
     if dataset == 'CSS' or dataset == "Cambridge":
-        valid_loader = DataLoader(dataset=valid_set, batch_size=batch_sizes[0], shuffle=True)
+        valid_loader = DataLoader(dataset=valid_set, batch_size=batch_sizes[1], shuffle=True)
 
     # training strategies
     valid_score_best = 0
     patience = 5
-    num_epochs = 40
+    num_epochs = 100
     score = {'train':[],'valid':[],'test':[]}
 
     if mode == 'held-out':
@@ -252,7 +252,7 @@ def train_main(model,\
 
     elif mode == 'joint':
         print('Joining training and validation set')
-        _std = []
+        best_score = 0
         for e in range(num_epochs):
             train_score, _ = train_loop(model, train_loader, device, optimizer, criterion)
             test_score = test_loop(model, test_loader, device, raw=False)
@@ -261,15 +261,17 @@ def train_main(model,\
             
             score['train'].append(train_score)
             score['test'].append(test_score)
-            if e>=3:
-                _std.append(np.std(score['train'][-3:]))
+
+            if test_score > best_score:
+                best_score = test_score
+                torch.save(model.state_dict(), os.path.join(save_model_to,'clf.pt'))
             # if train_score > .90:
             #     print('Training score reaches the threshold. Training stops.')
             #     print('Best score: {}. Saving model...'.format(test_score))
             #     torch.save(model.state_dict(), save_model_to)
             #     break
     
-    return score['test'], _std
+    return model
 
 
 def test_loop(model, test_dataloader, device, raw=False):
@@ -298,7 +300,7 @@ def test_loop(model, test_dataloader, device, raw=False):
 
     # print('\ntest score -> ' + str(test_score*100) + '%')
     if raw:
-        return y_prob, y_pred
+        return y_pred,y_prob
 
     return test_score
 
@@ -314,7 +316,7 @@ def mean_confidence_interval(data):
     return m, m-h, m+h
 
 
-def eva_model(pt_clf,framework,x_test=None,y_test=None,test_dataloader=None,device=None,num_bs=1000,save_path=None,print_path=None,notes=None):
+def eva_model(pt_clf,framework,x_test=None,y_test=None,test_dataloader=None,device=None,num_bs=10,save_path=None,print_path=None,notes=None):
     
     """
     Evaluate the model performance using N times Bootstrap on test data.
@@ -330,8 +332,8 @@ def eva_model(pt_clf,framework,x_test=None,y_test=None,test_dataloader=None,devi
         result_true = test_loop(pt_clf,test_dataloader,device,raw=True)
     
     # get true UAR and AUC-ROC scores
-    result['UAR_TRUE'] = roc_auc_score(y_test,result_true[0])
-    result['ROC_TRUE'] = recall_score(y_test,result_true[1],average='macro')
+    result['UAR_TRUE'] = recall_score(y_test,result_true[0],average='macro')
+    result['ROC_TRUE'] = roc_auc_score(y_test,result_true[1])
 
     # get CIs on UAR and AUC-ROC
     for bs in tqdm(range(num_bs)):
@@ -339,10 +341,10 @@ def eva_model(pt_clf,framework,x_test=None,y_test=None,test_dataloader=None,devi
         num_sample = len(y_test)
         idx = list(range(num_sample))
         bs_idx = random.choices(idx,k=num_sample)
-        bs_probs = result_true[0][bs_idx]
-        bs_preds = result_true[1][bs_idx]
-        result['UAR'].append(roc_auc_score(y_test,bs_preds))
-        result['ROC'].append(recall_score(y_test,bs_probs,average='macro'))
+        bs_preds = result_true[0][bs_idx]
+        bs_probs = result_true[1][bs_idx]
+        result['UAR'].append(recall_score(y_test[bs_idx],bs_preds,average='macro'))
+        result['ROC'].append(roc_auc_score(y_test[bs_idx],bs_probs))
         # result['TPR'].append(result_bs['TPR'])
         # result['TNR'].append(result_bs['TNR'])
     

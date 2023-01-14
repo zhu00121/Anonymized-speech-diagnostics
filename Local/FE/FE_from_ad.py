@@ -144,32 +144,32 @@ if __name__ == '__main__':
     #     **kwargs
     # )
 
-    kwargs = util.load_json('./Config/feat_config/mtr_v2_config')
+    kwargs = util.load_json('./Config/feat_config/mtr_config')
     ot = FE_from_dataset(
         metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
-        feature_dir='./Features/CSS/original/mtr_v2',
+        feature_dir='./Features/CSS/original/mtr',
         fs=16000,
-        feature_type='mtr_v2',
+        feature_type='mtr',
         anonymize='og',
         **kwargs
     )
 
-    kwargs = util.load_json('./Config/feat_config/mtr_v2_config')
+    kwargs = util.load_json('./Config/feat_config/mtr_config')
     ot = FE_from_dataset(
         metadata_path='/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_og.csv',
-        feature_dir='./Features/DiCOVA2/original/mtr_v2',
+        feature_dir='./Features/DiCOVA2/original/mtr',
         fs=16000,
-        feature_type='mtr_v2',
+        feature_type='mtr',
         anonymize='og',
         **kwargs
     )
 
-    kwargs = util.load_json('./Config/feat_config/mtr_v2_config')
+    kwargs = util.load_json('./Config/feat_config/mtr_config')
     ot = FE_from_dataset(
         metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv',
-        feature_dir='./Features/Cambridge/original/mtr_v2',
+        feature_dir='./Features/Cambridge/original/mtr',
         fs=16000,
-        feature_type='mtr_v2',
+        feature_type='mtr',
         anonymize='og',
         **kwargs
     )

@@ -65,11 +65,8 @@ def eva_per_system(
                                     **exp_kwargs['pipeline_kwargs']
                                     )
             print('---Inference phase---')
-            # sanity check on results saving path
-            if os.path.exists(save_to_dir):
-                save_to_dir = '%s/%s_%s'%(subcondition,feat,classifier)
-                if not os.path.exists(save_to_dir):
-                    os.mkdir(save_to_dir)
+            if not os.path.exists(save_to_dir):
+                os.makedirs(save_to_dir)
 
             infer.infer_uni(
                             exp_kwargs['feat'],
@@ -88,28 +85,57 @@ def eva_per_system(
     return 0
 
 
-def eva_per_subcondition(condition:str):
+class eva_main():
 
+    def __init__(self):
 
+        self.condition = {'og':['og-og'],
+        'ignorant':['og-ss','og-mcadams'],
+        'semi-informed':['mcadams-ss','ss-mcadams'],
+        'informed':['mcadams-mcadams','ss-ss'],
+        'augmented':['mcadams-mcadams_ss','ss-mcadams_ss']}
 
+        self.pipeline = ['openSMILE_pca-svm','openSMILE_svm','msr_pca-svm','msr_svm','logmelspec_bilstm','mtr_crnn']
 
-# TODO: complete the following function
-def eva_per_condition(condition:str,source_ano:str,target_ano:str,feat:str,classifier:str,pt:bool,parent_dir:str=None):
-    """
-    Given an anonymization mode (i.e., original/ignorant/semi-informed/informed/augmented), evaluate
-    all diagnostics systems.
-    """
+    def _eva_per_subcondition(self, condition, subcondition):
+        
+        print('----- Evaluate all systems under subcondition %s ------'%(subcondition))
 
-    return 0
+        for system in self.pipeline:
+            _feat, _classifier = system.split('_')
+            eva_per_system(
+                subcondition=subcondition,\
+                feat=_feat,
+                classifier=_classifier,
+                subcondition_config_dir='./Config/exp_config/%s/%s'%(condition,subcondition),
+                save_to_dir='./Results/performance/%s/%s/%s'%(condition,subcondition,system)
+            )
 
+        print('----- Experiments for sub-condition %s are finished -----'%(subcondition))
+        
+        return 0
 
-# TODO: complete the following function
-def eva_all_condition(parent_dir:str):
-    """
-    Evaluate all conditions for all diagnostics systems.
-    """
+    def _eva_per_condition(self, condition):
+        
+        print('----- Evaluate all sub-conditions under the condition %s ------'%(condition))
 
-    return 0
+        for sub in self.condition[condition]:
+            self._eva_per_subcondition(condition,sub)
+        
+        print('----- Experiments for condition %s are finished -----'%(condition))
+
+        return 0
+
+    def main(self):
+
+        print('----- Start evaluation -----')
+
+        for con in self.condition.keys():
+            self._eva_per_condition(con)
+
+        print('----- Finish evaluation -----')
+        
+        return 0
 
 
 # %%
@@ -118,8 +144,8 @@ if __name__ == '__main__':
     # test function with og condition
     eva_per_system(
         subcondition='og-og',
-        feat='msr',
-        classifier='pca-svm',
+        feat='logmelspec',
+        classifier='bilstm',
         subcondition_config_dir='./Config/exp_config/og/og-og',
-        save_to_dir='./Results/performance/og/og-og'
+        save_to_dir='./Results/performance/og/og-og/logmelspec_bilstm'
     )

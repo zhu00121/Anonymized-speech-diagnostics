@@ -11,13 +11,9 @@ import scipy
 import scipy.io.wavfile
 import argparse
 
-def anonym(filename, filepath, output_dir, winLengthinms=20, shiftLengthinms=10, lp_order=20, mcadams=0.8):    
-    # filename = file[0]
-    # filepath = file[1]
-    # output_file = output_dir + filename + '.wav'
-    output_file = os.path.join(output_dir, filename)
-    if not os.path.exists(output_dir): os.makedirs(output_dir)
-    sig, fs = librosa.load(filepath,sr=16000)    
+def anonym(input_path, output_path, winLengthinms=20, shiftLengthinms=10, lp_order=20, mcadams=0.8):    
+
+    sig, fs = librosa.load(input_path,sr=16000)    
     eps = np.finfo(np.float32).eps
     sig = sig+eps
     
@@ -84,7 +80,7 @@ def anonym(filename, filepath, output_dir, winLengthinms=20, shiftLengthinms=10,
         sig_rec[outindex] = sig_rec[outindex] + frame_rec
 
     sig_rec = sig_rec/np.max(np.abs(sig_rec))
-    scipy.io.wavfile.write(output_file, fs, np.float32(sig_rec)) 
+    scipy.io.wavfile.write(output_path, fs, np.float32(sig_rec)) 
     return []
 
 if __name__ == "__main__":

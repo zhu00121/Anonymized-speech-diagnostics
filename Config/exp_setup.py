@@ -53,7 +53,7 @@ class setup():
                                 'train_set':_source,
                                 'train_ano_mode':_source_ano,
                                 'test_set':_target,
-                                'test_set_mode':_target_ano,
+                                'test_ano_mode':_target_ano,
                                 'train_metadata_path':self.metadata_path['%s'%(_source)]['%s'%(_source_ano)],
                                 'test_metadata_path':self.metadata_path['%s'%(_target)]['%s'%(_target_ano)],
                                 'pipeline_kwargs':_clf_config['pipeline_kwargs']

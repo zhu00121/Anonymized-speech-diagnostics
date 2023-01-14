@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 def infer_uni(feat:str,train_set:str,train_ano_mode:str,test_set:str,test_ano_mode:str,model:str,metadata_path:str,clf_dir:str=None,res_dir:str=None):
 
     # sanity check
-    assert feat in ['openSMILE','logmelspec','msr','mtr'], "Input mode is not supported"
+    assert feat in ['openSMILE','logmelspec','msr','mtr','mtr_v2','mtr_v3'], "Input feature type is not supported"
     assert train_set in ['CSS','DiCOVA2','Cambridge'], "Input train set is not found"
     assert test_set in ['CSS','DiCOVA2','Cambridge'], "Input test set is not found"
     assert train_ano_mode in ['og','mcadams'], "Training anomyzation mode is not found" # TODO: add more anonymization modes
@@ -55,13 +55,13 @@ def infer_uni(feat:str,train_set:str,train_ano_mode:str,test_set:str,test_ano_mo
         # load model architecture and pre-trained weights
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if model == 'bilstm': pt_clf = bilstm.BiLSTM(pt_clf_kwargs).to(device)
-        elif model == 'crnn': pt_clf = crnn.crnn_cov_3d(pt_clf_kwargs.to(device))
+        elif model == 'crnn': pt_clf = crnn.crnn_cov_3d(pt_clf_kwargs).to(device)
         pt_clf.load_state_dict(clf)
         # load test data (/dataloader)
         test_data = covid_dataset._covid_dataset(dataset=test_set,split='test',feat=feat,metadata_path=metadata_path)
-        test_loader = DataLoader(dataset=test_set, batch_size=16, shuffle=False)
+        test_loader = DataLoader(dataset=test_data, batch_size=16, shuffle=False)
         # evaluate
-        result = ML_func.eva_model(pt_clf=pt_clf,framework='pytorch',test_dataloader=test_loader,device=device,save_path=result_path,notes=notes)
+        result = ML_func.eva_model(pt_clf=pt_clf,framework='pytorch',y_test=test_data.label,test_dataloader=test_loader,device=device,save_path=result_path,notes=notes)
 
     return 0
 
