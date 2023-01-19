@@ -1,0 +1,1 @@
+{"feat": "msr", "train_set": "Cambridge", "train_ano_mode": "og", "test_set": "DiCOVA2", "test_ano_mode": "mcadams", "train_metadata_path": "/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv", "test_metadata_path": "/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_mcadams.csv", "pipeline_kwargs": {"model": "svm", "pds": "yes"}}

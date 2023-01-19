@@ -120,4 +120,4 @@ if __name__ == '__main__':
 
     # util.save_as_json(kwargs,'./Config/exp_config/main_exp_config')
 
-    setup(kwargs).run(mode='og')
+    setup(kwargs).run(mode='informed')

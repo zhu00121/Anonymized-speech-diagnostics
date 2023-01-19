@@ -10,10 +10,14 @@ import numpy as np
 import scipy
 import scipy.io.wavfile
 import argparse
+import warnings
 
 def anonym(input_path, output_path, winLengthinms=20, shiftLengthinms=10, lp_order=20, mcadams=0.8):    
 
     sig, fs = librosa.load(input_path,sr=16000)    
+    if not (np.isfinite(sig).all()):
+        warnings.warn("NaN or infinity in signal, substitute with 0")
+        sig = np.zeros((fs,))
     eps = np.finfo(np.float32).eps
     sig = sig+eps
     
@@ -80,7 +84,14 @@ def anonym(input_path, output_path, winLengthinms=20, shiftLengthinms=10, lp_ord
         sig_rec[outindex] = sig_rec[outindex] + frame_rec
 
     sig_rec = sig_rec/np.max(np.abs(sig_rec))
-    scipy.io.wavfile.write(output_path, fs, np.float32(sig_rec)) 
+
+    if (np.isnan(sig_rec).any()): 
+        warnings.warn("NaN in anonymized audio. Original audio is saved instead.")
+        assert not (np.isnan(sig).any())
+        scipy.io.wavfile.write(output_path, fs, np.float32(sig))
+    elif not (np.isnan(sig_rec).any()):
+        scipy.io.wavfile.write(output_path, fs, np.float32(sig_rec)) 
+
     return []
 
 if __name__ == "__main__":

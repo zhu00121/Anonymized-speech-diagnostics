@@ -136,7 +136,7 @@ def load_feat(metadata_path:str,feat_name:str,split:str):
     if feat_name == 'logmelspec':
         assert feat_all.ndim == 3, "msr and logmelspec features should be 3-dimensional"
     elif feat_name == 'msr' or feat_name == 'openSMILE ':
-        assert feat_all.ndim == 2, "openSMILE features should be 2-dimensional"
+        assert feat_all.ndim == 2, "openSMILE and msr features should be 2-dimensional"
     elif feat_name == 'mtr':
         assert feat_all.ndim == 4, "mtr features should be 4-dimensional"
 

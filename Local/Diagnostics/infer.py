@@ -21,8 +21,8 @@ def infer_uni(feat:str,train_set:str,train_ano_mode:str,test_set:str,test_ano_mo
     assert feat in ['openSMILE','logmelspec','msr','mtr','mtr_v2','mtr_v3'], "Input feature type is not supported"
     assert train_set in ['CSS','DiCOVA2','Cambridge'], "Input train set is not found"
     assert test_set in ['CSS','DiCOVA2','Cambridge'], "Input test set is not found"
-    assert train_ano_mode in ['og','mcadams'], "Training anomyzation mode is not found" # TODO: add more anonymization modes
-    assert test_ano_mode in ['og','mcadams'], "Test anomyzation mode is not found" # TODO: add more anonymization modes
+    assert train_ano_mode in ['og','mcadams','ss'], "Training anomyzation mode is not found" # TODO: add more anonymization modes
+    assert test_ano_mode in ['og','mcadams','ss'], "Test anomyzation mode is not found" # TODO: add more anonymization modes
     
     # load pre-trained classifier
     print('Load pre-trained classifier (%s-%s)'%(train_set,train_ano_mode))
@@ -48,7 +48,7 @@ def infer_uni(feat:str,train_set:str,train_ano_mode:str,test_set:str,test_ano_mo
         print('Load test data (%s-%s)'%(test_set,test_ano_mode))
         test_data,test_label = util.load_feat(metadata_path=metadata_path,feat_name=feat,split='test')
         # evaluate
-        result = ML_func.eva_model(test_data,test_label,clf,save_path=result_path,notes=notes) # results are automatically saved
+        result = ML_func.eva_model(pt_clf=clf, framework='sklearn',x_test=test_data,y_test=test_label,save_path=result_path,notes=notes) # results are automatically saved
     
     # TODO: test the following code
     if feat == 'logmelspec' or 'mtr' in feat:

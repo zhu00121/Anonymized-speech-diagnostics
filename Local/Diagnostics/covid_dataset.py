@@ -141,7 +141,6 @@ class DiCOVA_2_Dataset(torch.utils.data.Dataset):
         return (inputs, targets)
 
 
-# %% TODO: add CSS and Cambridge sets
 
 class _covid_dataset(Dataset):
     """

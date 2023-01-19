@@ -1,11 +1,15 @@
 # TODO: Main script to anonymize audio and store in a new folder.
 import os,sys
 sys.path.append("./Local/")
+sys.path.append("/mnt/d/projects/speaker-anonymization-gan/")
+
 import pandas as pd
 from tqdm import tqdm
 import mcadams
 import timeit
 from Utils import util
+import app
+from app import ss_anonymize
 
 def ano_per_dataset(metadata_path:str, anonymize:str, ano_metadata_path:str=None):
 
@@ -20,6 +24,7 @@ def ano_per_dataset(metadata_path:str, anonymize:str, ano_metadata_path:str=None
 
     all_audio_path = df_md['audio_path'].tolist()
     ano_audio_path = []
+    error_files=[]
 
     print('Start anonymization | %s ...'%(anonymize))
 
@@ -33,14 +38,25 @@ def ano_per_dataset(metadata_path:str, anonymize:str, ano_metadata_path:str=None
         new_path = os.path.join(head,new_name) # anonymized audio path
         ano_audio_path.append(new_path)
         # anonymize audio
-        if anonymize == 'mcadams':
-            mcadams.anonym(input_path=ad_path,output_path=new_path)
+        try:
+            if anonymize == 'mcadams':
+                mcadams.anonym(input_path=ad_path,output_path=new_path)
+            # TODO: add ss and mcadams-ss
+            elif anonymize == 'ss':
+                ss_anonymize(input_path=ad_path,output_path=new_path,model=app.VPInterface())
+            
+        except:
+            print('Error occured in '+ad_path)
+            error_files.append(ad_path)
+            pass
+
     
     computetime = timeit.default_timer() - starttime
     ave_computetime = computetime/len(all_audio_path)
 
     print('Anonymization completed | %s'%(anonymize))
     print('Average time taken for anonymize one audio file is %f'%(ave_computetime))
+    print(error_files)
 
     # Save feature path
     df_md_ano = df_md
@@ -56,20 +72,20 @@ if __name__ == '__main__':
     ano_per_dataset(
 
         metadata_path='/mnt/d/projects/COVID-datasets/CSS/label/metadata_v2.csv',
-        anonymize='mcadams'
+        anonymize='ss'
 
     )
 
     # ano_per_dataset(
 
     #     metadata_path='/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_v2.csv',
-    #     anonymize='mcadams'
+    #     anonymize='ss'
 
     # )
 
-    ano_per_dataset(
+    # ano_per_dataset(
 
-        metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_v2.csv',
-        anonymize='mcadams'
+    #     metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_v2.csv',
+    #     anonymize='ss'
 
-    )
+    # )

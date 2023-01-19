@@ -18,7 +18,7 @@ def read_audio(audio_path:str, fs:int):
     """
     assert os.path.exists(audio_path), "Audio path does not exist!"
     ad,_ = librosa.load(audio_path,sr=fs) # sampling rate variable discarded
-    ad = ad/np.max(ad) # amplitude scaling
+    ad = ad/(np.max(ad)+np.finfo(np.float32).eps) # amplitude scaling
     assert np.isfinite(ad).all(), "NaN in audio array"
 
     return ad
@@ -83,9 +83,12 @@ def calc_mtr(x, fs, n_cochlear_filters, low_freq, min_cf, max_cf, fast=True, nor
     spectrum.
     Returns: np.ndarray [shape=(23, 8, t)]
     """
+
     _, mtr = srmr(x, fs=fs, n_cochlear_filters=n_cochlear_filters, \
         low_freq=low_freq, min_cf=min_cf, max_cf=max_cf, fast=fast, norm=norm)
     
+    assert mtr.ndim == 3
+
     if require_ave:
         mtr = np.mean(mtr,axis=2).squeeze() # average over the time axis
         mtr = mtr.flatten()
@@ -93,17 +96,16 @@ def calc_mtr(x, fs, n_cochlear_filters, low_freq, min_cf, max_cf, fast=True, nor
     return mtr
 
 
-def calc_openSMILE(audio_path):
+def calc_openSMILE(ad):
 
     """
     Calculate openSMILE features - ComParE_2016 version which has 6,000ish features.
     """
-    assert os.path.exists(audio_path), "Audio path does not exist!"
 
     smile = opensmile.Smile(
     feature_set=opensmile.FeatureSet.ComParE_2016,
     feature_level=opensmile.FeatureLevel.Functionals)
-    df_y = smile.process_file(audio_path) # y is a DataFrame
+    df_y = smile.process_signal(ad,16000) # y is a DataFrame
     y = df_y.to_numpy()
 
     return y

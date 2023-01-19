@@ -95,7 +95,7 @@ class eva_main():
         'informed':['mcadams-mcadams','ss-ss'],
         'augmented':['mcadams-mcadams_ss','ss-mcadams_ss']}
 
-        self.pipeline = ['openSMILE_pca-svm','openSMILE_svm','msr_pca-svm','msr_svm','logmelspec_bilstm','mtr_crnn']
+        self.pipeline = ['msr_pca-svm','msr_svm','logmelspec_bilstm','mtr_crnn','openSMILE_pca-svm']
 
     def _eva_per_subcondition(self, condition, subcondition):
         
@@ -141,11 +141,108 @@ class eva_main():
 # %%
 if __name__ == '__main__':
 
-    # test function with og condition
+    # eva_main()._eva_per_condition(condition='informed')
+
+    # fully-informed: mcadmas-mcadams
     eva_per_system(
-        subcondition='og-og',
-        feat='logmelspec',
-        classifier='bilstm',
-        subcondition_config_dir='./Config/exp_config/og/og-og',
-        save_to_dir='./Results/performance/og/og-og/logmelspec_bilstm'
+        subcondition='mcadams-mcadams',
+        feat='msr',
+        classifier='pca-svm',
+        subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
+        save_to_dir='./Results/performance/informed/mcadams-mcadams/msr_pca-svm'
     )
+
+    # eva_per_system(
+    #     subcondition='mcadams-mcadams',
+    #     feat='msr',
+    #     classifier='svm',
+    #     subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
+    #     save_to_dir='./Results/performance/informed/mcadams-mcadams/msr_svm'
+    # )
+
+    # eva_per_system(
+    #     subcondition='mcadams-mcadams',
+    #     feat='openSMILE',
+    #     classifier='pca-svm',
+    #     subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
+    #     save_to_dir='./Results/performance/informed/mcadams-mcadams/openSMILE_pca-svm'
+    # )
+
+
+    # eva_per_system(
+    #     subcondition='mcadams-mcadams',
+    #     feat='openSMILE',
+    #     classifier='svm',
+    #     subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
+    #     save_to_dir='./Results/performance/informed/mcadams-mcadams/openSMILE_svm'
+    # )
+
+
+    # eva_per_system(
+    #     subcondition='mcadams-mcadams',
+    #     feat='mtr',
+    #     classifier='crnn',
+    #     subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
+    #     save_to_dir='./Results/performance/informed/mcadams-mcadams/mtr_crnn'
+    # )
+
+
+    # eva_per_system(
+    #     subcondition='mcadams-mcadams',
+    #     feat='logmelspec',
+    #     classifier='bilstm',
+    #     subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
+    #     save_to_dir='./Results/performance/informed/mcadams-mcadams/logmelspec_bilstm'
+    # )
+
+    # # ignorant: og-mcadams
+    # eva_per_system(
+    #     subcondition='og-mcadams',
+    #     feat='msr',
+    #     classifier='pca-svm',
+    #     subcondition_config_dir='./Config/exp_config/ignorant/og-mcadams',
+    #     save_to_dir='./Results/performance/ignorant/og-mcadams/msr_pca-svm'
+    # )
+
+    # eva_per_system(
+    #     subcondition='og-mcadams',
+    #     feat='msr',
+    #     classifier='svm',
+    #     subcondition_config_dir='./Config/exp_config/ignorant/og-mcadams',
+    #     save_to_dir='./Results/performance/ignorant/og-mcadams/msr_svm'
+    # )
+
+    # eva_per_system(
+    #     subcondition='og-mcadams',
+    #     feat='openSMILE',
+    #     classifier='pca-svm',
+    #     subcondition_config_dir='./Config/exp_config/ignorant/og-mcadams',
+    #     save_to_dir='./Results/performance/ignorant/og-mcadams/openSMILE_pca-svm'
+    # )
+
+
+    # eva_per_system(
+    #     subcondition='og-mcadams',
+    #     feat='openSMILE',
+    #     classifier='svm',
+    #     subcondition_config_dir='./Config/exp_config/ignorant/og-mcadams',
+    #     save_to_dir='./Results/performance/ignorant/og-mcadams/openSMILE_svm'
+    # )
+
+
+    # eva_per_system(
+    #     subcondition='og-mcadams',
+    #     feat='mtr',
+    #     classifier='crnn',
+    #     subcondition_config_dir='./Config/exp_config/ignorant/og-mcadams',
+    #     save_to_dir='./Results/performance/ignorant/og-mcadams/mtr_crnn'
+    # )
+
+
+    # eva_per_system(
+    #     subcondition='og-mcadams',
+    #     feat='logmelspec',
+    #     classifier='bilstm',
+    #     subcondition_config_dir='./Config/exp_config/ignorant/og-mcadams',
+    #     save_to_dir='./Results/performance/ignorant/og-mcadams/logmelspec_bilstm'
+    # )

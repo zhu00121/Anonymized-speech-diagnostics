@@ -1,0 +1,1 @@
+{"feat": "openSMILE", "train_set": "CSS", "train_ano_mode": "og", "test_set": "CSS", "test_ano_mode": "mcadams", "train_metadata_path": "/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv", "test_metadata_path": "/mnt/d/projects/COVID-datasets/CSS/label/metadata_mcadams.csv", "pipeline_kwargs": {"model": "pca-svm", "pds": "yes", "n_components": 100}}
