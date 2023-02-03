@@ -16,21 +16,28 @@ import torch.optim as optim
 import random
 import warnings
 
-def train_uni(feat:str,train_set:str,ano_mode:str,metadata_path:str,clf_dir:str=None,**clf_kwargs):
+def train_uni(feat:str,train_set:str or list,ano_mode:str,metadata_path:str,clf_dir:str=None,**clf_kwargs):
     """
     Given training (and validation) data, train a diagnostics system/model. Trained model is then saved
     for further testing.
     """
     # sanity check
     assert feat in ['openSMILE','logmelspec','msr','mtr','mtr_v2','mtr_v3'], "Input mode is not supported"
-    assert train_set in ['CSS','DiCOVA2','Cambridge'], "Input train set is not found"
-    assert ano_mode in ['og','mcadams'] # TODO: add more anonymization modes
+    assert train_set in ['CSS','DiCOVA2','Cambridge',["DiCOVA2","CSS"],["DiCOVA2", "Cambridge"]], "Input train set is not found"
+    # assert ano_mode in ['og','mcadams','ss',['og','ss'],['ss','og']]
     if not ano_mode in metadata_path: warnings.warn("Inconsistency between anonymization mode and metadata file name. Ensure the correct metadata file is used.")
 
     # model saving path
     if clf_dir is None:
         clf_dir = './Results/Pretrained'
-    folder_name = os.path.join(clf_dir,'%s_%s_%s_%s'%(train_set,ano_mode,feat,clf_kwargs['model']))
+    
+    if type(train_set) == list:
+        tr0, tr1 = train_set
+        ano0, ano1 = ano_mode
+        folder_name = os.path.join(clf_dir,'%s_%s_%s_%s_%s_%s'%(tr0,tr1,ano0,ano1,feat,clf_kwargs['model']))
+    elif type(train_set) != list:
+        folder_name = os.path.join(clf_dir,'%s_%s_%s_%s'%(train_set,ano_mode,feat,clf_kwargs['model']))
+    
     if not os.path.isdir(folder_name):
         os.makedirs(folder_name)
 
@@ -40,14 +47,31 @@ def train_uni(feat:str,train_set:str,ano_mode:str,metadata_path:str,clf_dir:str=
     
         # load data
         print('Load data...')
-        train_data,train_label = util.load_feat(metadata_path=metadata_path,feat_name=feat,split='train')
-
-        # use pre-defined valid set
-        if clf_kwargs['pds'] == 'yes':
-            valid_data,valid_label = util.load_feat(metadata_path=metadata_path,feat_name=feat,split='valid')
-            print('A pre-defined train-validation split will be used.')
-        elif clf_kwargs['pds'] == 'no':
-            print('Only training set is defined. N-fold CV will be performed.')
+        if type(train_set) == str: 
+            train_data,train_label = util.load_feat(metadata_path=metadata_path,feat_name=feat,split='train')
+            # use pre-defined valid set
+            if clf_kwargs['pds'] == 'yes':
+                valid_data,valid_label = util.load_feat(metadata_path=metadata_path,feat_name=feat,split='valid')
+                print('A pre-defined train-validation split will be used.')
+            elif clf_kwargs['pds'] == 'no':
+                print('Only training set is defined. N-fold CV will be performed.')
+            
+        elif type(train_set) == list:
+            train_data_0,train_label_0 = util.load_feat(metadata_path=metadata_path[0],feat_name=feat,split='train')
+            train_data_1,train_label_1 = util.load_feat(metadata_path=metadata_path[1],feat_name=feat,split='train')
+            train_data = np.concatenate((train_data_0,train_data_1))
+            train_label = np.concatenate((train_label_0,train_label_1))
+            # use pre-defined valid set
+            if clf_kwargs['pds'] == 'yes':
+                print('A pre-defined train-validation split will be used.')
+                valid_data_0,valid_label_0 = util.load_feat(metadata_path=metadata_path[1],feat_name=feat,split='valid')
+                # valid_data_1,valid_label_1 = util.load_feat(metadata_path=metadata_path[1],feat_name=feat,split='valid')
+                # valid_data = np.concatenate((valid_data_0,valid_data_1))
+                # valid_label = np.concatenate((valid_label_0,valid_label_1))
+                valid_data = valid_data_0
+                valid_label = valid_label_0
+            elif clf_kwargs['pds'] == 'no':
+                print('Only training set is defined. N-fold CV will be performed.')
 
         # train shallow ML models
         if clf_kwargs['pds'] == 'yes':
@@ -72,7 +96,8 @@ def train_uni(feat:str,train_set:str,ano_mode:str,metadata_path:str,clf_dir:str=
     elif feat == 'logmelspec' or 'mtr' in feat:
 
         if feat == 'logmelspec':
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = torch.device("cuda")
             # set RNG for reproducibility
             ML_func.set_seed(clf_kwargs['RNG'],device)
             # define classifier, optimizer and loss function
@@ -119,11 +144,12 @@ if __name__ == '__main__':
     
     # util.save_as_json(kwargs,'./Config/exp_config/og/CSS_og_CSS_og_openSMILE_pca-svm')
     torch.cuda.empty_cache()
-    clf_kwargs = util.load_json('./Config/model_config/crnn_config')
-    model = train_uni(feat='mtr',\
-                        train_set='Cambridge',
-                        ano_mode='og',
-                        metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv',
+    clf_kwargs = util.load_json('./Config/model_config/bilstm_config')
+    model = train_uni(feat='logmelspec',\
+                        train_set=['DiCOVA2','CSS'],
+                        ano_mode=['og','og'],
+                        metadata_path=['/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv',\
+                            '/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv'],
                         **clf_kwargs['pipeline_kwargs'])
 
     # import matplotlib.pyplot as plt

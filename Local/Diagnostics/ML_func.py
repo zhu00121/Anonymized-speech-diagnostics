@@ -199,20 +199,20 @@ def train_main(model,\
     
     # sanity check
     assert mode in ['held-out','joint'], "Unknown training mode"
-    assert dataset in ['CSS','DiCOVA2','Cambridge'], "Unknown dataset name"
+    # assert dataset in ['CSS','DiCOVA2','Cambridge'], "Unknown dataset name"
 
     # prepare dataloaders
     train_set = covid_dataset._covid_dataset(dataset=dataset,split='train',feat=feat,metadata_path=metadata_path)
     test_set = covid_dataset._covid_dataset(dataset=dataset,split='test',feat=feat,metadata_path=metadata_path,filters=filters)
-    if dataset == 'CSS' or dataset == "Cambridge":
+    if dataset != "DiCOVA2" and not("DiCOVA2" in dataset):
         valid_set = covid_dataset._covid_dataset(dataset=dataset,split='valid',feat=feat,metadata_path=metadata_path)
 
-    if mode == 'joint' and (dataset == 'CSS' or dataset == "Cambridge"):
+    if mode == 'joint' and (dataset != "DiCOVA2" and not ("DiCOVA2" in dataset)):
         train_set = ConcatDataset([train_set, valid_set])
     
     train_loader = DataLoader(dataset=train_set, batch_size=batch_sizes[0], shuffle=True)
     test_loader = DataLoader(dataset=test_set, batch_size=batch_sizes[2], shuffle=False)
-    if dataset == 'CSS' or dataset == "Cambridge":
+    if dataset != "DiCOVA2" and ("DiCOVA2" not in dataset):
         valid_loader = DataLoader(dataset=valid_set, batch_size=batch_sizes[1], shuffle=True)
 
     # training strategies
@@ -236,7 +236,7 @@ def train_main(model,\
             score['valid'].append(valid_score)
             score['test'].append(test_score)
             
-            if e >25:
+            if e >15:
                 if valid_score > valid_score_best:
                     print('Best score: {}. Saving model...'.format(valid_score))
                     torch.save(model.state_dict(), os.path.join(save_model_to,'clf.pt'))
@@ -546,10 +546,10 @@ def minmax_scaler(data,axis:tuple):
 
 
 def standard_scaler(data,axis:tuple):
-    data_mean = data.mean(axis=axis, keepdims=True)
-    data_std = data.std(axis=axis, keepdims=True)
-    data = (data - data_mean)/(data_std+1e-15)
-    
+    data_mean = np.mean(data, axis=axis, keepdims=True)
+    data_std = np.std(data, axis=axis, keepdims=True)
+    data = np.divide((data - data_mean),(data_std+1e-15))
+
     return data
 
 

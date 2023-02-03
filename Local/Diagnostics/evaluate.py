@@ -23,8 +23,8 @@ def eva_per_system(
     # sanity check
     # assert condition in ['og','ignorant','semi-informed','informed','augmented']
     source_ano, target_ano = subcondition.split('-')
-    assert source_ano in ['og','mcadams','ss','mcadams_ss'] # TODO: add more anonymization modes
-    assert target_ano in ['og','mcadams','ss','mcadams_ss'] # TODO: add more anonymization modes
+    assert source_ano in ['og','mcadams','ss','og_og','mcadams_og','ss_og']
+    assert target_ano in ['og','mcadams','ss']
     assert feat in ['openSMILE','logmelspec','msr','mtr'], "Input feature type is not supported"
     assert classifier in ['svm','pca-svm','bilstm','crnn']
 
@@ -38,7 +38,7 @@ def eva_per_system(
 
     # set-up experiments for within- and cross-dataset evaluation
     # TODO: add sub-condition
-    datasets = ['Cambridge','CSS','DiCOVA2']
+    datasets = ['Cambridge','CSS','DiCOVA2','DiCOVA2_CSS','DiCOVA2_Cambridge']
     print('---')
     print('Pipeline: %s-%s'%(feat,classifier))
     for source in datasets:
@@ -46,40 +46,45 @@ def eva_per_system(
             print('Source dataset:%s | Anonymization:%s'%(source,source_ano))
             print('Target dataset:%s | Anonymization:%s'%(target,target_ano))
             exp_name = '%s_%s_%s_%s_%s_%s'%(source,source_ano,target,target_ano,feat,classifier)
-            exp_kwargs = util.load_json(os.path.join(dir_0,exp_name))
+            try:
+                exp_kwargs = util.load_json(os.path.join(dir_0,exp_name))
+                # check if a pre-trained model exists, if not, train one
+                if default_clf_path is None: 
+                    default_clf_path = './Results/Pretrained/'
+                print('---Training phase---')
+                if os.path.exists(os.path.join(default_clf_path,'%s_%s_%s_%s'%(source,source_ano,feat,classifier))):
+                    print('Found pre-trained model')
+                elif not os.path.exists(os.path.join(default_clf_path,'%s_%s_%s_%s'%(source,source_ano,feat,classifier))):
+                    print('Pre-trained model not found in %s. Start training one from scratch...'%(default_clf_path))
+                    clf = train.train_uni(
+                                        exp_kwargs['feat'],\
+                                        exp_kwargs['train_set'],\
+                                        exp_kwargs['train_ano_mode'],\
+                                        exp_kwargs['train_metadata_path'],\
+                                        clf_dir = default_clf_path,\
+                                        **exp_kwargs['pipeline_kwargs']
+                                        )
+                print('---Inference phase---')
+                if not os.path.exists(save_to_dir):
+                    os.makedirs(save_to_dir)
 
-            # check if a pre-trained model exists, if not, train one
-            if default_clf_path is None:
-                default_clf_path = './Results/Pretrained/'
-            print('---Training phase---')
-            if os.path.exists(os.path.join(default_clf_path,'%s_%s_%s_%s'%(source,source_ano,feat,classifier))):
-                print('Found pre-trained model')
-            elif not os.path.exists(os.path.join(default_clf_path,'%s_%s_%s_%s'%(source,source_ano,feat,classifier))):
-                print('Pre-trained model not found in %s. Start training one from scratch...'%(default_clf_path))
-                clf = train.train_uni(
-                                    exp_kwargs['feat'],\
-                                    exp_kwargs['train_set'],\
-                                    exp_kwargs['train_ano_mode'],\
-                                    exp_kwargs['train_metadata_path'],\
-                                    clf_dir = default_clf_path,\
-                                    **exp_kwargs['pipeline_kwargs']
-                                    )
-            print('---Inference phase---')
-            if not os.path.exists(save_to_dir):
-                os.makedirs(save_to_dir)
+                infer.infer_uni(
+                                exp_kwargs['feat'],
+                                exp_kwargs['train_set'],
+                                exp_kwargs['train_ano_mode'],
+                                exp_kwargs['test_set'],
+                                exp_kwargs['test_ano_mode'],
+                                classifier,
+                                exp_kwargs['test_metadata_path'],
+                                default_clf_path,
+                                res_dir=save_to_dir
+                                )
+                print('---')
 
-            infer.infer_uni(
-                            exp_kwargs['feat'],
-                            exp_kwargs['train_set'],
-                            exp_kwargs['train_ano_mode'],
-                            exp_kwargs['test_set'],
-                            exp_kwargs['test_ano_mode'],
-                            classifier,
-                            exp_kwargs['test_metadata_path'],
-                            default_clf_path,
-                            res_dir=save_to_dir
-                            )
-            print('---')
+            except: 
+                print(exp_name + ' not found; pass to next task.')
+                pass
+
     print('All experiments for pipeline: %s-%s are finished.'%(feat,classifier))
     
     return 0
@@ -93,9 +98,9 @@ class eva_main():
         'ignorant':['og-ss','og-mcadams'],
         'semi-informed':['mcadams-ss','ss-mcadams'],
         'informed':['mcadams-mcadams','ss-ss'],
-        'augmented':['mcadams-mcadams_ss','ss-mcadams_ss']}
+        'augmented':['og_og-mcadams','og_og-ss','mcadams_og-ss','ss_og-mcadams']}
 
-        self.pipeline = ['msr_pca-svm','msr_svm','logmelspec_bilstm','mtr_crnn','openSMILE_pca-svm']
+        self.pipeline = ['msr_svm','openSMILE_svm']
 
     def _eva_per_subcondition(self, condition, subcondition):
         
@@ -141,23 +146,23 @@ class eva_main():
 # %%
 if __name__ == '__main__':
 
-    # eva_main()._eva_per_condition(condition='informed')
+    eva_main()._eva_per_condition(condition='augmented')
 
     # fully-informed: mcadmas-mcadams
-    eva_per_system(
-        subcondition='mcadams-mcadams',
-        feat='msr',
-        classifier='pca-svm',
-        subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
-        save_to_dir='./Results/performance/informed/mcadams-mcadams/msr_pca-svm'
-    )
-
     # eva_per_system(
     #     subcondition='mcadams-mcadams',
     #     feat='msr',
-    #     classifier='svm',
+    #     classifier='pca-svm',
     #     subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
-    #     save_to_dir='./Results/performance/informed/mcadams-mcadams/msr_svm'
+    #     save_to_dir='./Results/performance/informed/mcadams-mcadams/msr_pca-svm'
+    # )
+
+    # eva_per_system(
+    #     subcondition='ss-ss',
+    #     feat='msr',
+    #     classifier='svm',
+    #     subcondition_config_dir='./Config/exp_config/informed/ss-ss',
+    #     save_to_dir='./Results/performance/informed/ss-ss/msr_svm'
     # )
 
     # eva_per_system(
@@ -170,29 +175,29 @@ if __name__ == '__main__':
 
 
     # eva_per_system(
-    #     subcondition='mcadams-mcadams',
+    #     subcondition='ss-ss',
     #     feat='openSMILE',
     #     classifier='svm',
-    #     subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
-    #     save_to_dir='./Results/performance/informed/mcadams-mcadams/openSMILE_svm'
+    #     subcondition_config_dir='./Config/exp_config/informed/ss-ss',
+    #     save_to_dir='./Results/performance/informed/ss-ss/openSMILE_svm'
     # )
 
 
     # eva_per_system(
-    #     subcondition='mcadams-mcadams',
+    #     subcondition='ss-ss',
     #     feat='mtr',
     #     classifier='crnn',
-    #     subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
-    #     save_to_dir='./Results/performance/informed/mcadams-mcadams/mtr_crnn'
+    #     subcondition_config_dir='./Config/exp_config/informed/ss-ss',
+    #     save_to_dir='./Results/performance/informed/ss-ss/mtr_crnn'
     # )
 
 
     # eva_per_system(
-    #     subcondition='mcadams-mcadams',
+    #     subcondition='ss-ss',
     #     feat='logmelspec',
     #     classifier='bilstm',
-    #     subcondition_config_dir='./Config/exp_config/informed/mcadams-mcadams',
-    #     save_to_dir='./Results/performance/informed/mcadams-mcadams/logmelspec_bilstm'
+    #     subcondition_config_dir='./Config/exp_config/informed/ss-ss',
+    #     save_to_dir='./Results/performance/informed/ss-ss/logmelspec_bilstm'
     # )
 
     # # ignorant: og-mcadams
@@ -240,9 +245,9 @@ if __name__ == '__main__':
 
 
     # eva_per_system(
-    #     subcondition='og-mcadams',
+    #     subcondition='og_mcadams-ss',
     #     feat='logmelspec',
     #     classifier='bilstm',
-    #     subcondition_config_dir='./Config/exp_config/ignorant/og-mcadams',
-    #     save_to_dir='./Results/performance/ignorant/og-mcadams/logmelspec_bilstm'
+    #     subcondition_config_dir='./Config/exp_config/augmented/og_mcadams-ss',
+    #     save_to_dir='./Results/performance/augmented/og_mcadams-ss/logmelspec_bilstm'
     # )

@@ -19,16 +19,23 @@ def infer_uni(feat:str,train_set:str,train_ano_mode:str,test_set:str,test_ano_mo
 
     # sanity check
     assert feat in ['openSMILE','logmelspec','msr','mtr','mtr_v2','mtr_v3'], "Input feature type is not supported"
-    assert train_set in ['CSS','DiCOVA2','Cambridge'], "Input train set is not found"
-    assert test_set in ['CSS','DiCOVA2','Cambridge'], "Input test set is not found"
-    assert train_ano_mode in ['og','mcadams','ss'], "Training anomyzation mode is not found" # TODO: add more anonymization modes
-    assert test_ano_mode in ['og','mcadams','ss'], "Test anomyzation mode is not found" # TODO: add more anonymization modes
+    # assert train_set in ['CSS','DiCOVA2','Cambridge'], "Input train set is not found"
+    # assert test_set in ['CSS','DiCOVA2','Cambridge'], "Input test set is not found"
+    # assert train_ano_mode in ['og','mcadams','ss'], "Training anomyzation mode is not found" # TODO: add more anonymization modes
+    # assert test_ano_mode in ['og','mcadams','ss'], "Test anomyzation mode is not found" # TODO: add more anonymization modes
     
     # load pre-trained classifier
     print('Load pre-trained classifier (%s-%s)'%(train_set,train_ano_mode))
     if clf_dir is None:
         clf_dir = './Results/Pretrained'
-    folder_name = os.path.join(clf_dir,'%s_%s_%s_%s'%(train_set,train_ano_mode,feat,model))
+
+    if type(train_set) == list:
+        tr0, tr1 = train_set
+        ano0, ano1 = train_ano_mode
+        folder_name = os.path.join(clf_dir,'%s_%s_%s_%s_%s_%s'%(tr0,tr1,ano0,ano1,feat,model))
+    elif type(train_set) != list:
+        folder_name = os.path.join(clf_dir,'%s_%s_%s_%s'%(train_set,train_ano_mode,feat,model))
+    
     if model == 'svm' or model == 'pca-svm':
         clf = util.load_model(os.path.join(folder_name,'clf.pkl'),mode='sklearn')
     elif model == 'bilstm' or model == 'crnn':
@@ -38,8 +45,12 @@ def infer_uni(feat:str,train_set:str,train_ano_mode:str,test_set:str,test_ano_mo
     # define where the results are saved 
     if res_dir is None:
         res_dir = './Results/performance'
-    result_path = os.path.join(res_dir,'%s_%s_%s_%s_%s_%s.pkl')%(train_set,train_ano_mode,test_set,test_ano_mode,feat,model)
-    notes = '%s-%s-%s-%s-%s-%s'%(train_set,train_ano_mode,test_set,test_ano_mode,feat,model)
+    if type(train_set) == list:
+        result_path =  os.path.join(res_dir,'%s_%s_%s_%s_%s_%s_%s_%s.pkl')%(tr0,tr1,ano0,ano1,test_set,test_ano_mode,feat,model)
+        notes = '%s-%s-%s-%s-%s-%s-%s-%s'%(tr0,tr1,ano0,ano1,test_set,test_ano_mode,feat,model)
+    elif type(train_set) != list:
+        result_path = os.path.join(res_dir,'%s_%s_%s_%s_%s_%s.pkl')%(train_set,train_ano_mode,test_set,test_ano_mode,feat,model)
+        notes = '%s-%s-%s-%s-%s-%s'%(train_set,train_ano_mode,test_set,test_ano_mode,feat,model)
 
     print('Evaluating diagnostics performance with 1000 bootstrapping...')
     # for 1-D features
@@ -65,17 +76,16 @@ def infer_uni(feat:str,train_set:str,train_ano_mode:str,test_set:str,test_ano_mo
 
     return 0
 
-
 # %%
-# if __name__ == '__main__':
+if __name__ == '__main__':
 
-    # exp_kwargs_dir = './Config/exp_config/CSS_og_CSS_og_openSMILE_pca-svm'
-    # kwargs = util.load_json(exp_kwargs_dir)
+    exp_kwargs_dir = './Config/exp_config/augmented/og_mcadams-ss/msr_svm/CSS_Cambridge_og_mcadams_DiCOVA2_ss_msr_svm'
+    kwargs = util.load_json(exp_kwargs_dir)
     
-    # infer_uni(
-    #          kwargs['feat'],kwargs['train_set'],kwargs['train_ano_mode'],\
-    #          kwargs['test_set'],kwargs['test_ano_mode'],kwargs['pipeline_kwargs']['model'],\
-    #          kwargs['metadata_path']
-    #          )
+    infer_uni(
+             kwargs['feat'],kwargs['train_set'],kwargs['train_ano_mode'],\
+             kwargs['test_set'],kwargs['test_ano_mode'],kwargs['pipeline_kwargs']['model'],\
+             kwargs['test_metadata_path']
+             )
     
 # util.save_as_json(kwargs,exp_kwargs)

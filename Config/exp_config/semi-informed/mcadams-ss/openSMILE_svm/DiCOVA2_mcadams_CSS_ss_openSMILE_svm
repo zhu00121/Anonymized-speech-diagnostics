@@ -1,0 +1,1 @@
+{"feat": "openSMILE", "train_set": "DiCOVA2", "train_ano_mode": "mcadams", "test_set": "CSS", "test_ano_mode": "ss", "train_metadata_path": "/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_mcadams.csv", "test_metadata_path": "/mnt/d/projects/COVID-datasets/CSS/label/metadata_ss.csv", "pipeline_kwargs": {"model": "svm", "pds": "no"}}

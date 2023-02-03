@@ -18,18 +18,19 @@ from Utils import util
 import torchaudio
 from speechbrain.pretrained import EncoderClassifier
 from speechbrain.pretrained import SpeakerRecognition
+from scipy import spatial
 
 
-def get_embeddings(audio_path:str):
+def get_embeddings(audio_path:str,classifier):
 
-    classifier = EncoderClassifier.from_hparams(source="speechbrain/spkrec-ecapa-voxceleb")
+    # classifier = EncoderClassifier.from_hparams(source="speechbrain/spkrec-ecapa-voxceleb")
     signal, _ = torchaudio.load(audio_path)
     embeddings = classifier.encode_batch(signal)
 
     return embeddings
 
 
-def verify_speaker(audio_og_path:str,verification):
+def verify_speaker(audio_og_path:str,classifier):
 
     head, tail = os.path.split(audio_og_path)
     sample_id = util.remove_suffix(tail,'.wav')
@@ -37,20 +38,16 @@ def verify_speaker(audio_og_path:str,verification):
     audio_mcadams_path = os.path.join(head, sample_id) + '_mcadams.wav'
     audio_ss_path = os.path.join(head, sample_id) + '_ss.wav'
     
-    choices = [audio_og_path,audio_mcadams_path,audio_ss_path]
+    choices = [[audio_og_path,audio_mcadams_path],[audio_og_path,audio_ss_path],[audio_mcadams_path,audio_ss_path],[audio_og_path,audio_og_path]]
     score_all = []
-    prediction_all = []
 
     for i in choices:
-        for j in choices:
-            score, prediction = verification.verify_files(i,j)
-            score_all.append(score.detach().cpu().to_numpy())
-            prediction_all.append(prediction.detach().cpu().to_numpy())
-    
-    score_all = np.asarray(score_all).squeeze()
-    prediction_all = np.asarray(score_all).squeeze()
+        embd_0 = get_embeddings(i[0],classifier).detach().cpu().numpy()
+        embd_1 = get_embeddings(i[1],classifier).detach().cpu().numpy()
+        similarity = 1-spatial.distance.cosine(embd_0,embd_1)
+        score_all.append(similarity)
 
-    return score_all, prediction_all
+    return np.asarray(score_all)
 
 
 class verify_main():
@@ -62,34 +59,37 @@ class verify_main():
             '/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_v2.csv',
             '/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_v2.csv'
             ]
-        self.verifier = SpeakerRecognition.from_hparams(source="speechbrain/spkrec-ecapa-voxceleb", savedir="./Local/ASV/pretrained_models/spkrec-ecapa-voxceleb", run_opts={"device":"cuda"} )
+        self.verifier = EncoderClassifier.from_hparams(source="speechbrain/spkrec-ecapa-voxceleb")
         
     def start_verify(self):
         
         res_score = []
-        res_preds = []
+        
         for dataset in self.metadata_path:
+            k = 0
             df = pd.read_csv(dataset) # load metadata
             all_audio_path = df['audio_path'].tolist()
             scores = []
-            preds = []
-            for i in tqdm(all_audio_path):
-                try:
-                    s,p = verify_speaker(i,self.verifier)
-                    scores.append(s)
-                    preds.append(p)
-                except:
-                    pass
             
+            for i in tqdm(all_audio_path):
+                if k < 5:
+                    try:
+                        s = verify_speaker(i,self.verifier)
+                        scores.append(s)
+                    except:
+                        print('Audio not found, skip to the next')
+                        pass
+                k+=1
+
             ave_score = np.mean(np.asarray(scores),axis=0)
-            ave_preds = np.mean(np.asarray(preds),axis=0)
+            print(ave_score)
             res_score.append(ave_score)
-            res_preds.append(ave_preds)
-        
-        return res_score, res_preds
+
+        return res_score
 
 
 # %%
 if __name__ == '__main__':
 
     ASV_result = verify_main().start_verify()
+    print(ASV_result)

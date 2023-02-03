@@ -14,7 +14,7 @@ class setup():
                          'ignorant':['og-ss','og-mcadams'],
                          'semi-informed':['mcadams-ss','ss-mcadams'],
                          'informed':['mcadams-mcadams','ss-ss'],
-                         'augmented':['mcadams-mcadams_ss','ss-mcadams_ss']
+                         'augmented':['og_og-ss','og_og-mcadams','ss_og-mcadams','mcadams_og-ss']
                          }
         self.datasets = ['CSS','DiCOVA2','Cambridge']
         self.ano_method = ['og','mcadams','ss']
@@ -28,14 +28,14 @@ class setup():
         self.metadata_path = kwargs['metadata_path']
 
     
-    def _create_exp_subcondition(self,subcondition,save_dir):
+    def _create_exp_subcondition(self,subcondition,save_dir,**options):
         """
         Create experimental setup file for a system
         """
         print('Subcondition %s'%(subcondition))
         # sanity check
         _source_ano, _target_ano = subcondition.split('-')
-        assert _source_ano in self.ano_method and _target_ano in self.ano_method, "unknown subcondition: %s"%(subcondition)
+        # assert _source_ano in self.ano_method and _target_ano in self.ano_method, "unknown subcondition: %s"%(subcondition)
         
         # define parameters
         for system in self.pipeline:
@@ -44,24 +44,52 @@ class setup():
                 os.mkdir(_system_path)
             _feat,_clf = system.split('_')
             _clf_config = util.load_json(os.path.join(self.model_config_dir,'%s_config')%(_clf))
-            for _source in self.datasets:
-                if _source == 'DiCOVA2':
-                    _clf_config['pipeline_kwargs']['pds'] == 'no'
-                for _target in self.datasets:
-                    exp_param = {
-                                'feat':_feat,
-                                'train_set':_source,
-                                'train_ano_mode':_source_ano,
-                                'test_set':_target,
-                                'test_ano_mode':_target_ano,
-                                'train_metadata_path':self.metadata_path['%s'%(_source)]['%s'%(_source_ano)],
-                                'test_metadata_path':self.metadata_path['%s'%(_target)]['%s'%(_target_ano)],
-                                'pipeline_kwargs':_clf_config['pipeline_kwargs']
-                                }
+
+            _source = options.get('source')
+            _target = options.get('target')
+
+            # if given a specified training and test dataset, then:
+            if _source is not None and _target is not None:
+                source_anos = _source_ano.split('_')
+                sources = _source.split('_')
+                exp_param = {
+                            'feat':_feat,
+                            'train_set':sources,
+                            'train_ano_mode':source_anos,
+                            'test_set':_target,
+                            'test_ano_mode':_target_ano,
+                            'train_metadata_path':[self.metadata_path['%s'%(sources[i])]['%s'%(source_anos[i])] for i in range(len(source_anos))],
+                            'test_metadata_path':self.metadata_path['%s'%(_target)]['%s'%(_target_ano)],
+                            'pipeline_kwargs':_clf_config['pipeline_kwargs']
+                            }
         
-                    # save experimental set-up as .json file
-                    filename = '%s_%s_%s_%s_%s'%(_source,_source_ano,_target,_target_ano,system)
-                    util.save_as_json(exp_param,os.path.join(_system_path,filename))
+                # save experimental set-up as .json file
+                filename = '%s_%s_%s_%s_%s'%(_source,_source_ano,_target,_target_ano,system)
+                util.save_as_json(exp_param,os.path.join(_system_path,filename))
+            
+            elif _source is None and _target is None:
+                # try every combination
+                for _source in self.datasets:
+                    if _source == 'DiCOVA2':
+                        _clf_config['pipeline_kwargs']['pds'] = 'no'
+                    for _target in self.datasets:
+                        _train_metadata_path = self.metadata_path['%s'%(_source)]['%s'%(_source_ano)]
+
+                        exp_param = {
+                                    'feat':_feat,
+                                    'train_set':_source,
+                                    'train_ano_mode':_source_ano,
+                                    'test_set':_target,
+                                    'test_ano_mode':_target_ano,
+                                    'train_metadata_path':self.metadata_path['%s'%(_source)]['%s'%(_source_ano)],
+                                    'test_metadata_path':self.metadata_path['%s'%(_target)]['%s'%(_target_ano)],
+                                    'pipeline_kwargs':_clf_config['pipeline_kwargs']
+                                    }
+            
+                        # save experimental set-up as .json file
+                        filename = '%s_%s_%s_%s_%s'%(_source,_source_ano,_target,_target_ano,system)
+                        util.save_as_json(exp_param,os.path.join(_system_path,filename))
+
         print('Finished set-up for current subcondition %s'%(subcondition))
 
 
@@ -77,8 +105,17 @@ class setup():
         for i in self.condition[condition]:
             _subcondition_path = os.path.join(_condition_path,i)
             if not os.path.exists(_subcondition_path):
-                os.mkdir(_subcondition_path) 
-            self._create_exp_subcondition(i,_subcondition_path)
+                os.mkdir(_subcondition_path)
+
+            if condition  == 'augmented':
+                # self._create_exp_subcondition(i,_subcondition_path,**{'source':'CSS_Cambridge','target':'DiCOVA2'})
+                self._create_exp_subcondition(i,_subcondition_path,**{'source':'DiCOVA2_CSS','target':'DiCOVA2'})
+                self._create_exp_subcondition(i,_subcondition_path,**{'source':'DiCOVA2_Cambridge','target':'DiCOVA2'})
+                # self._create_exp_subcondition(i,_subcondition_path,**{'source':'Cambridge_CSS','target':'DiCOVA2'})
+                # self._create_exp_subcondition(i,_subcondition_path,**{'source':'Cambridge_CSS','target':'CSS'})
+                # self._create_exp_subcondition(i,_subcondition_path,**{'source':'Cambridge_CSS','target':'Cambridge'})
+            elif condition != 'augmented':
+                self._create_exp_subcondition(i,_subcondition_path)
 
         print('Finished set-up for condition %s'%(condition))
             
@@ -120,4 +157,4 @@ if __name__ == '__main__':
 
     # util.save_as_json(kwargs,'./Config/exp_config/main_exp_config')
 
-    setup(kwargs).run(mode='informed')
+    setup(kwargs).run(mode='augmented')

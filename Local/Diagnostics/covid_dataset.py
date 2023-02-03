@@ -151,17 +151,31 @@ class _covid_dataset(Dataset):
                  dataset:str,
                  feat:str,
                  split:str,
-                 metadata_path:str,
+                 metadata_path:str or list,
                  scale:str='standard',
                  filters:tuple=None):
         
         # sanity check
         assert split in ['train','valid','test']
         assert feat in ['logmelspec','mtr','mtr_v2','mtr_v3']
-        assert dataset in ['CSS','DiCOVA2','Cambridge'], 'Unknown dataset!'
+        assert dataset in ['CSS','DiCOVA2','Cambridge',["DiCOVA2", "CSS"], ["DiCOVA2","Cambridge"]], 'Unknown dataset!'
 
         # load desired features and labels
-        data, label = util.load_feat(metadata_path,feat,split)
+        if dataset in ['CSS','DiCOVA2','Cambridge']:
+            data, label = util.load_feat(metadata_path,feat,split)
+    
+        elif dataset == ["DiCOVA2","Cambridge"] or dataset == ["DiCOVA2", "CSS"]:
+            path_og = metadata_path[0]
+            path_aug = metadata_path[1]
+            data_og, label_og = util.load_feat(path_og,feat,split)
+            data_aug, label_aug = util.load_feat(path_aug,feat,split)
+            # data = data_aug
+            # label = label_aug
+            data = np.concatenate((data_og,data_aug),axis=0)
+            label = np.concatenate((label_og,label_aug),axis=0)
+            # print(data.shape)
+            # print(label.shape)
+
         # sanity check on number of features and labels
         assert data.shape[0] == label.shape[0], 'data size does not match label size!'
         
@@ -173,14 +187,16 @@ class _covid_dataset(Dataset):
             data = 20*np.log10(data) # power to db
         elif feat == 'logmelspec':
             data = np.moveaxis(data,[1,2],[2,1])
+        print('Pre-processing finished.') 
 
         # scale data (file-level)
         if 'mtr' in feat: axis = (2,3,4)
         elif feat == 'logmelspec': axis = (1,2)
-        if scale == 'minmax':
-            data = ML_func.minmax_scaler(data,axis)
-        elif scale == 'standard':
-            data = ML_func.standard_scaler(data,axis) 
+        # if scale == 'minmax':
+        #     data = ML_func.minmax_scaler(data,axis)
+        # elif scale == 'standard':
+        #     data = ML_func.standard_scaler(data,axis)
+        # print('Scaling finished.')
 
         # spectral-temporal saliency masks
         if filters is not None:
@@ -209,11 +225,17 @@ if __name__ == '__main__':
     #                              'train')
     # print(label.shape)
 
+    import gc
+
+    gc.collect()
+
     import matplotlib.pyplot as plt
-    toy_dataset = _covid_dataset(dataset='DiCOVA2',\
+    toy_dataset = _covid_dataset(dataset=['CSS','Cambridge'],\
                                  feat='logmelspec',
                                  split='train',
-                                 metadata_path='/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_og.csv',
+                                 metadata_path=['/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',\
+                                    '/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv'],
                                  scale='standard',
                                  filters=None)
-    print(toy_dataset.label.shape)
+
+    print(toy_dataset.data.shape)
