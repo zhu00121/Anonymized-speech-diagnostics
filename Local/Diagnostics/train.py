@@ -59,17 +59,19 @@ def train_uni(feat:str,train_set:str or list,ano_mode:str,metadata_path:str,clf_
         elif type(train_set) == list:
             train_data_0,train_label_0 = util.load_feat(metadata_path=metadata_path[0],feat_name=feat,split='train')
             train_data_1,train_label_1 = util.load_feat(metadata_path=metadata_path[1],feat_name=feat,split='train')
-            train_data = np.concatenate((train_data_0,train_data_1))
-            train_label = np.concatenate((train_label_0,train_label_1))
+            # no pds for DiCOVA2, need to do a manual split
+            num_train_dic = int(train_data_0.shape[0] * 0.8) 
+            train_data = np.concatenate((train_data_0[:num_train_dic,::],train_data_1))
+            train_label = np.concatenate((train_label_0[:num_train_dic],train_label_1))
             # use pre-defined valid set
             if clf_kwargs['pds'] == 'yes':
                 print('A pre-defined train-validation split will be used.')
-                valid_data_0,valid_label_0 = util.load_feat(metadata_path=metadata_path[1],feat_name=feat,split='valid')
-                # valid_data_1,valid_label_1 = util.load_feat(metadata_path=metadata_path[1],feat_name=feat,split='valid')
-                # valid_data = np.concatenate((valid_data_0,valid_data_1))
-                # valid_label = np.concatenate((valid_label_0,valid_label_1))
-                valid_data = valid_data_0
-                valid_label = valid_label_0
+                valid_data_0,valid_label_0 = util.load_feat(metadata_path=metadata_path[0],feat_name=feat,split='train')
+                valid_data_1,valid_label_1 = util.load_feat(metadata_path=metadata_path[1],feat_name=feat,split='valid')
+                valid_data = np.concatenate((valid_data_0[num_train_dic:,::],valid_data_1)) 
+                valid_label = np.concatenate((valid_label_0[num_train_dic:],valid_label_1))
+                # valid_data = valid_data_0
+                # valid_label = valid_label_0
             elif clf_kwargs['pds'] == 'no':
                 print('Only training set is defined. N-fold CV will be performed.')
 

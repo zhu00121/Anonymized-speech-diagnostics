@@ -14,7 +14,9 @@ class setup():
                          'ignorant':['og-ss','og-mcadams'],
                          'semi-informed':['mcadams-ss','ss-mcadams'],
                          'informed':['mcadams-mcadams','ss-ss'],
-                         'augmented':['og_og-ss','og_og-mcadams','ss_og-mcadams','mcadams_og-ss']
+                         'augmented':['og_og-ss','og_ss-ss','og_mcadams-ss','og_og-mcadams','og_mcadams-mcadams','og_ss-mcadams',\
+                            'ss_og-mcadams','ss_ss-mcadams','ss_mcadams-mcadams',\
+                            'mcadams_og-ss','mcadams_ss-ss','mcadams_mcadams-ss']
                          }
         self.datasets = ['CSS','DiCOVA2','Cambridge']
         self.ano_method = ['og','mcadams','ss']

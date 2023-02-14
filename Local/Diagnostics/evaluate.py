@@ -23,7 +23,7 @@ def eva_per_system(
     # sanity check
     # assert condition in ['og','ignorant','semi-informed','informed','augmented']
     source_ano, target_ano = subcondition.split('-')
-    assert source_ano in ['og','mcadams','ss','og_og','mcadams_og','ss_og']
+    # assert source_ano in ['og','mcadams','ss','og_og','mcadams_og','ss_og']
     assert target_ano in ['og','mcadams','ss']
     assert feat in ['openSMILE','logmelspec','msr','mtr'], "Input feature type is not supported"
     assert classifier in ['svm','pca-svm','bilstm','crnn']
@@ -98,9 +98,11 @@ class eva_main():
         'ignorant':['og-ss','og-mcadams'],
         'semi-informed':['mcadams-ss','ss-mcadams'],
         'informed':['mcadams-mcadams','ss-ss'],
-        'augmented':['og_og-mcadams','og_og-ss','mcadams_og-ss','ss_og-mcadams']}
+        'augmented':['og_og-ss','og_ss-ss','og_mcadams-ss','og_og-mcadams','og_mcadams-mcadams','og_ss-mcadams',\
+                    'ss_og-mcadams','ss_ss-mcadams','ss_mcadams-mcadams',\
+                    'mcadams_og-ss','mcadams_ss-ss','mcadams_mcadams-ss']}
 
-        self.pipeline = ['msr_svm','openSMILE_svm']
+        self.pipeline = ['logmelspec_bilstm']
 
     def _eva_per_subcondition(self, condition, subcondition):
         

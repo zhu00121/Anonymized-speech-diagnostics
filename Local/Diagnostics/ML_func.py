@@ -24,7 +24,7 @@ import plotly.graph_objects as go
 import plotly.subplots as sp
 import plotly.io as pio
 from Utils import util
-import covid_dataset
+# import covid_dataset
 from tqdm import tqdm
 
 """
