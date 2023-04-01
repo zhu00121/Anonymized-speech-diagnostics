@@ -1,9 +1,11 @@
 # Anonymized-speech-diagnostics (ASD)
-Integrate speech anonymization techniques with speech-based diagnostics systems
+This repository contains scripts to reproduce results shown in our paper "On the impact of voice anonymization on speech-based COVID-19 detection".
 
-## What is ASD
+## Demo audio
+We provide three versions of voice recording, including the original voice, the McAdams-anonymized version, and the GAN-anonymized version. To keep the privacy of participants in the COVID-19 datasets employed in our study, the voice demo is from one of our authors. The speech content remains the same as that used in the COVID sound databases.
 
-*PLACEHOLDER FOR BACKGROUND*
+Original:
+https://user-images.githubusercontent.com/48067384/229263325-365843f4-d59e-46e0-9e53-8e9d10a0b22a.mp4
 
 ## ASD system diagram
 
@@ -11,9 +13,6 @@ Integrate speech anonymization techniques with speech-based diagnostics systems
 
 ![image](./Graphs/protected_system.jpg)
 
-## Training and inference phase of ASD
-
-*PLACEHOLDER FOR GRAPHS*
 
 ## Repository structure
 
