@@ -27,7 +27,7 @@ https://user-images.githubusercontent.com/48067384/229263325-365843f4-d59e-46e0-
 └── Results
 ```
 
-**Config**: contains the (hyper-)parameters used for different models. <br /> 
+**Config**: contains the (hyper-)parameters used for feature extraction, and model training and evaluation. <br /> 
 
 **Local**: contains four sub-folders, corresponding to the four blocks of ASD. All scripts can be found in this folder.  <br /> 
  - **ASV**: speaker-verification systems used to check the efficacy of anonymization. <br />
