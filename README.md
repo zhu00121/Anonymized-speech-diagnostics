@@ -11,7 +11,7 @@ https://user-images.githubusercontent.com/48067384/229263325-365843f4-d59e-46e0-
 
 *PLACEHOLDER FOR GRAPHS*
 
-![image](./Graphs/unprotected.jpg =250x250)
+![image|50%](./Graphs/unprotected.jpg =250x250)
 
 
 ## Repository structure
