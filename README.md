@@ -7,7 +7,7 @@ We provide three versions of the voice recording, including the original voice, 
 Original:
 https://user-images.githubusercontent.com/48067384/229263325-365843f4-d59e-46e0-9e53-8e9d10a0b22a.mp4
 
-## ASD system diagram
+## System diagram
 
 ![image|10%](./Graphs/unprotected.png)
 
