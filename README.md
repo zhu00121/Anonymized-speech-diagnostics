@@ -1,5 +1,7 @@
 # Overview
-This repository contains scripts to reproduce results shown in our paper "On the impact of voice anonymization on speech-based COVID-19 detection". Note that the repo is still in progress and only the voice demos are provided at this stage.
+*Note that the repo is still in progress and only the voice demos are provided at this stage.
+
+This repository contains scripts to reproduce results shown in our paper "On the impact of voice anonymization on speech-based COVID-19 detection". We implemented two voice anonymization methods: (1) first one relies on the modification to McAdams coefficients, and (2) the second synthesizes a new speech based on the substitued speaker embeddings and pre-extracted phone sequence. Five diagnostics models are implemented, which were top-performing systems in the COVID-19 detection challenges.
 
 ## Demo audio
 We provide three versions of the voice recording, including the original voice, the McAdams-anonymized version, and the GAN-anonymized version. To keep the privacy of participants in the COVID-19 datasets employed in our study, the voice demo is from one of the authors. The speech content remains the same as that used in the COVID sound databases.
