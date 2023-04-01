@@ -9,7 +9,7 @@ https://user-images.githubusercontent.com/48067384/229263325-365843f4-d59e-46e0-
 
 ## ASD system diagram
 
-![image|50%](./Graphs/unprotected.png)
+![image|10%](./Graphs/unprotected.png)
 
 
 ## Repository structure
