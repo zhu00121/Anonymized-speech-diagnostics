@@ -1,5 +1,5 @@
 # Overview
-*Note that the repo is still in progress and only the voice demos are provided at this stage.
+*Note that the repo is still in progress and only the voice demos are provided at this stage. 
 
 This repository contains scripts to reproduce results shown in our paper "On the impact of voice anonymization on speech-based COVID-19 detection". 
 
