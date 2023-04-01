@@ -9,7 +9,7 @@ https://user-images.githubusercontent.com/48067384/229263325-365843f4-d59e-46e0-
 
 ## System diagram
 
-![image|10%](./Graphs/unprotected.png)
+![image](./Graphs/unprotected.png width="50%" height="50%")
 
 
 ## Repository structure
