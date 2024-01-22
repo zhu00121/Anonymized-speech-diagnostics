@@ -11,16 +11,20 @@ class setup():
 
     def __init__(self,kwargs):
         self.condition = {'og':['og-og'],
-                         'ignorant':['og-ss','og-mcadams'],
-                         'semi-informed':['mcadams-ss','ss-mcadams'],
-                         'informed':['mcadams-mcadams','ss-ss'],
-                         'augmented':['og_og-ss','og_ss-ss','og_mcadams-ss','og_og-mcadams','og_mcadams-mcadams','og_ss-mcadams',\
-                            'ss_og-mcadams','ss_ss-mcadams','ss_mcadams-mcadams',\
-                            'mcadams_og-ss','mcadams_ss-ss','mcadams_mcadams-ss']
+                         'ignorant':['og-ss','og-mcadams','og-pros'],
+                         'semi-informed':['mcadams-ss','ss-mcadams','mcadams-pros','ss-pros','pros-mcadams','pros-ss'],
+                         'informed':['mcadams-mcadams','ss-ss','pros-pros'],
+                         'augmented':[
+                            'og_og-ss','og_ss-ss','og_mcadams-ss','og_pros-ss',
+                            'og_og-mcadams','og_mcadams-mcadams','og_ss-mcadams','og_pros-mcadams',
+                            'og_og-pros', 'og_mcadams-pros', 'og_ss-pros', 'og_pros-pros',
+                            'ss_ss-mcadams','ss_mcadams-mcadams','ss_pros-mcadams',
+                            'mcadams_ss-ss','mcadams_mcadams-ss','mcadams_pros-ss',
+                            'mcadams_ss-pros']
                          }
         self.datasets = ['CSS','DiCOVA2','Cambridge']
-        self.ano_method = ['og','mcadams','ss']
-        self.pipeline = ['openSMILE_pca-svm','openSMILE_svm','msr_pca-svm','msr_svm','logmelspec_bilstm','mtr_crnn']
+        self.ano_method = ['og','mcadams','ss','pros']
+        self.pipeline = ['openSMILE_pca-svm','openSMILE_svm','msr_pca-svm','msr_svm','logmelspec_bilstm']
 
         self.exp_root_path = kwargs.get('exp_config_root','./Config/exp_config')
         if not os.path.exists(self.exp_root_path):
@@ -74,6 +78,8 @@ class setup():
                 for _source in self.datasets:
                     if _source == 'DiCOVA2':
                         _clf_config['pipeline_kwargs']['pds'] = 'no'
+                    elif _source != 'DiCOVA2':
+                        _clf_config['pipeline_kwargs']['pds'] = 'yes'
                     for _target in self.datasets:
                         _train_metadata_path = self.metadata_path['%s'%(_source)]['%s'%(_source_ano)]
 
@@ -143,20 +149,23 @@ if __name__ == '__main__':
                              'CSS':{
                                    'og':'/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',
                                    'mcadams':'/mnt/d/projects/COVID-datasets/CSS/label/metadata_mcadams.csv',
-                                   'ss':'/mnt/d/projects/COVID-datasets/CSS/label/metadata_ss.csv'
+                                   'ss':'/mnt/d/projects/COVID-datasets/CSS/label/metadata_ss.csv',
+                                   'pros':'/mnt/d/projects/COVID-datasets/CSS/label/metadata_pros.csv'
                                    },
                              'DiCOVA2':{
                                    'og':'/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_og.csv',
                                    'mcadams':'/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_mcadams.csv',
-                                   'ss':'/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_ss.csv'
+                                   'ss':'/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_ss.csv',
+                                   'pros': '/mnt/d/projects/COVID-datasets/DiCOVA2/label/metadata_pros.csv'
                                    },
                              'Cambridge':{
                                    'og':'/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_og.csv',
                                    'mcadams':'/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_mcadams.csv',
-                                   'ss':'/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_ss.csv'
+                                   'ss':'/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_ss.csv',
+                                   'pros':'/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_pros.csv'
                                    },
                              }}
 
-    # util.save_as_json(kwargs,'./Config/exp_config/main_exp_config')
-
+    setup(kwargs).run(mode='ignorant')
+    setup(kwargs).run(mode='informed')
     setup(kwargs).run(mode='augmented')

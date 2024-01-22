@@ -1,0 +1,3 @@
+from .demo_pool_anonymizer import DemoPoolAnonymizer
+from .demo_random_anonymizer import DemoRandomAnonymizer
+from .demo_gan_anonymizer import DemoGANAnonymizer

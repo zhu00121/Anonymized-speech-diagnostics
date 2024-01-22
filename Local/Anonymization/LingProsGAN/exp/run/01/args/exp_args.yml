@@ -1,0 +1,32 @@
+metadata_folder: exp/covid_data/metadata
+metadata_filename: combined_metadata.csv
+manifest_file_train: exp/covid_data/manifest/train.json
+manifest_file_valid: exp/covid_data/manifest/valid.json
+manifest_file_test: exp/covid_data/manifest/test.json
+
+pretrained_gan: pretrained_models/gan/style-embed_wgan.pt
+
+gan_save_path: exp/run/00/checkpoints/gan.pt
+critic_save_path: exp/run/00/checkpoints/critic.pt
+
+model_parameters:
+  model: resnet
+  gan_variant: wgan-qc
+  epochs: 1
+  z_dim: 32
+  cycles: 1000
+  n_max_iterations: 10000000
+  learning_rate: 0.000001
+  betas: [0.5, 0.999]
+  size: 8
+  nfilter: 8
+  nfilter_max: 16
+  batch_size: 256
+  data_dim: [1, 1, 128]
+  activation: leaky_relu
+  num_workers: 8
+  conv_filters: 20
+  gamma: 1
+  milestones: [1500, 3000, 5000]
+  save_every: 30
+  opt_iterations: 1

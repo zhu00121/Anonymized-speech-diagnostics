@@ -1,14 +1,8 @@
 # ignore feature and results folder
 /Features
-/Results/
-
 
 # exclude pretrained models
-/Local/ASV
-/pretrained_models
-
-# exclude visualization scripts
-/Local/Visualize
+/Local/Anonymization/LingProsGAN/models/*
 
 # exclude demo audios, upload these later
 /.wav
