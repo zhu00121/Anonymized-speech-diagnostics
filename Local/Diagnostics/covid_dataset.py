@@ -220,16 +220,6 @@ class _covid_dataset(Dataset):
 #%%
 if __name__ == '__main__':
 
-    # data, label = util.load_feat('/mnt/d/projects/COVID-datasets/CSS/label/metadata_og.csv',\
-    #                              'mtr',
-    #                              'train')
-    # print(label.shape)
-
-    import gc
-
-    gc.collect()
-
-    import matplotlib.pyplot as plt
     toy_dataset = _covid_dataset(dataset=['CSS','Cambridge'],\
                                  feat='logmelspec',
                                  split='train',
