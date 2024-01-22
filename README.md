@@ -23,7 +23,7 @@ We provide three versions of the voice recording, including the original voice, 
 
 <img src="https://user-images.githubusercontent.com/48067384/229264462-fcfe46ee-969d-4e9e-8ecc-d1682e44ee81.png" width="400" height="300">
 
-## Repository structure [TBD]
+## Repository structure
 
 ```bash
 ├── Config
@@ -36,14 +36,34 @@ We provide three versions of the voice recording, including the original voice, 
 └── Results
 ```
 
-**Config**: contains the (hyper-)parameters used for feature extraction, and model training and evaluation. `<br />`
+**Config**: contains the (hyper-)parameters used for feature extraction, and model training and evaluation.
 
-**Local**: contains four sub-folders, corresponding to the four blocks of ASD. All scripts can be found in this folder.  `<br />`
 
-- **ASV**: Used for storing pretraiend speaker verification models. `<br />`
-- **Anonymization**: anonymization techniques (systems) used to anonymize speech recordings. `<br />`
-- **Diagnostics**: speech-based diagnostics systems. `<br />`
-- **FE**: feature extraction block, which is comprised of low-level signal processing functions, audio file I/O functions, etc. `<br />`
+**Local**: contains four sub-folders, corresponding to the four blocks of ASD. All scripts can be found in this folder.
 
-**Results**: results of experiments. `<br />`
+
+- **ASV**: Used for storing pretraiend speaker verification models.
+- **Anonymization**: anonymization techniques (systems) used to anonymize speech recordings.
+- **Diagnostics**: speech-based diagnostics systems.
+- **FE**: feature extraction block, which is comprised of low-level signal processing functions, audio file I/O functions, etc.
+
+**Results**: results of experiments.
+
 **Graphs**: diagrams and so on.
+
+
+# Pipeline explanation
+
+###### Step-1: Extract features from recordings
+
+Refer to `Local/FE/FE_from_ad.py`. Modify the scripts according to your own metadata files, and how the recordings were saved. The features should be saved in the `Features` folder.
+
+###### Step-2: Anonymize the recordings
+
+Refer to `Local/Anonymization` for the three types of anonymization methods. We provide demos for each type of approach. The GAN ones will need several backbones for the ASR, Prosody, and TTS modules. We provide the backbones in a separate link which will be uploaded soon. In the end, you should have a metadata file (.csv) that stores the paths to the features, paths to the recordings, and label information.
+
+###### Step-3: Run evaluation on diagnostic systems
+
+Since there are multiple different settings of anonymizaiton (clean, ignorant, semi-informed, informed, augmented), we stored experimental set-up in separate files, which can be generated using `Config/exp_setup.py`. Change the metadata file paths to your own directory.
+
+Then run `Local/Diagnostics/evaluate.py`, which does model training and evaluation on all anonymization conditions and diagnostics systems.

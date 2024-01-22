@@ -1,3 +1,40 @@
+"""
+Usage:
+    # For openSMILE features
+    ot = FE_from_dataset(
+        metadata_path='PATH_TO_YOUR_METADATA',
+        feature_dir='./Features/DATASET_NAME/ANONYMIZER/openSMILE',
+        fs=16000,
+        feature_type='openSMILE',
+        anonymize='ANONYMIZER',
+        add_noise=False,
+    )
+
+
+    kwargs = util.load_json('./Config/feat_config/msr_config')
+    ot = FE_from_dataset(
+        metadata_path='PATH_TO_YOUR_METADATA',
+        feature_dir='./Features/DATASET_NAME/ANONYMIZER/msr',
+        fs=16000,
+        feature_type='msr',
+        anonymize='ANONYMIZER',
+        add_noise=False,
+        **kwargs
+    )
+
+    kwargs = util.load_json('./Config/feat_config/logmelspec_config')
+    ot = FE_from_dataset(
+        metadata_path='PATH_TO_YOUR_METADATA',
+        feature_dir='./Features/DATASET_NAME/ANONYMIZER/logmelspec',
+        fs=16000,
+        feature_type='logmelspec',
+        anonymize='ANONYMIZER',
+        add_noise=False,
+        **kwargs
+    )
+"""
+
+
 import os,sys
 sys.path.append("./Local/")
 import joblib
@@ -133,40 +170,3 @@ def FE_from_dataset(metadata_path:str, feature_dir:str, fs:int, feature_type:str
     df_md_new.to_csv(metadata_path_new)
 
     return df_md_new
-
-
-if __name__ == '__main__':
-
-    ot = FE_from_dataset(
-        metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_pros.csv',
-        feature_dir='./Features/Cambridge/pros/openSMILE',
-        fs=16000,
-        feature_type='openSMILE',
-        anonymize='pros',
-        add_noise=False,
-    )
-
-#############################################
-    kwargs = util.load_json('./Config/feat_config/msr_config')
-
-    ot = FE_from_dataset(
-        metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_pros.csv',
-        feature_dir='./Features/Cambridge/pros/msr',
-        fs=16000,
-        feature_type='msr',
-        anonymize='pros',
-        add_noise=False,
-        **kwargs
-    )
-#####################################
-    kwargs = util.load_json('./Config/feat_config/logmelspec_config')
-
-    ot = FE_from_dataset(
-        metadata_path='/mnt/d/projects/COVID-datasets/Cambridge_Task2/label/metadata_pros.csv',
-        feature_dir='./Features/Cambridge/pros/logmelspec',
-        fs=16000,
-        feature_type='logmelspec',
-        anonymize='pros',
-        add_noise=False,
-        **kwargs
-    )
