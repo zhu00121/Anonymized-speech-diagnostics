@@ -68,4 +68,4 @@ Then run `Local/Diagnostics/evaluate.py`, which does model training (SVM, PCA-SV
 
 # Contact
 
-The repo is merged from multiple separate repos, hence might face some minor issues. If you have questions on data acquisition, pipeline set-up, or model details, please contact me by Yi.Zhu@inrs.ca.
+The repo is merged from multiple separate repos, hence minor issues may be seen if any steps were set up incorrectly. If you have questions on data acquisition, pipeline set-up, or model details, please contact me by Yi.Zhu@inrs.ca.
